@@ -10,7 +10,7 @@
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 :root{
 --bg:#050505;--bg2:#0a0a0a;--card:#101010;
---text:#f0efe9;--muted:#7a7a6e;--dim:#4a4a42;
+--text:#f5f4ee;--muted:#b0ad9e;--dim:#8a8778;
 --border:#1a1a1a;--accent:#c4713b;--accent2:#e8945a;
 --glow:rgba(196,113,59,.08);--glow2:rgba(196,113,59,.2);
 --font:'Outfit',sans-serif;--mono:'JetBrains Mono',monospace;
@@ -55,7 +55,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);overflow-x:h
 .nav-logo:hover .logo-icon{transform:rotate(10deg) scale(1.15)}
 .logo-text{font-size:17px;font-weight:700;letter-spacing:.3px}
 .nav-links{display:flex;gap:36px;align-items:center}
-.nav-links a{color:var(--dim);text-decoration:none;font-size:11px;font-weight:500;letter-spacing:2px;text-transform:uppercase;transition:all .4s;position:relative}
+.nav-links a{color:var(--muted);text-decoration:none;font-size:11px;font-weight:500;letter-spacing:2px;text-transform:uppercase;transition:all .4s;position:relative}
 .nav-links a::after{content:'';position:absolute;bottom:-6px;left:0;width:0;height:1px;background:var(--accent);transition:width .4s cubic-bezier(.4,0,.2,1)}
 .nav-links a:hover{color:var(--text)}.nav-links a:hover::after{width:100%}
 .nav-links a.cta{color:var(--bg);background:var(--text);padding:10px 28px;border-radius:100px;font-weight:600;letter-spacing:.5px;font-size:12px}
@@ -95,7 +95,7 @@ section{position:relative;z-index:1;overflow:hidden;perspective:1200px}
 #hero{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;position:relative}
 .hero-bg{position:absolute;inset:0;z-index:0;overflow:hidden}
 .hero-bg img{width:100%;height:100%;object-fit:cover;animation:kb1 30s ease-in-out infinite alternate}
-.hero-overlay{position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(5,5,5,.15) 0%,rgba(5,5,5,.45) 40%,rgba(5,5,5,1) 100%)}
+.hero-overlay{position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(5,5,5,.4) 0%,rgba(5,5,5,.65) 40%,rgba(5,5,5,1) 100%)}
 .hero-vignette{position:absolute;inset:0;z-index:1;box-shadow:inset 0 0 200px rgba(0,0,0,.8)}
 .hero-content{position:relative;z-index:3}
 .hero-tag{font-family:var(--mono);font-size:12px;letter-spacing:6px;color:var(--accent);margin-bottom:48px}
@@ -121,7 +121,8 @@ section{position:relative;z-index:1;overflow:hidden;perspective:1200px}
 .split-img.kb2 img{animation:kb2 22s ease-in-out infinite alternate}
 .split-img.kb3 img{animation:kb3 18s ease-in-out infinite alternate}
 .split-img-overlay{position:absolute;inset:0;background:linear-gradient(90deg,var(--bg2) 0%,transparent 20%);z-index:1}
-.step-num{font-family:var(--mono);font-size:64px;font-weight:900;background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.01));-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1;margin-bottom:16px}
+.step-num{font-family:var(--mono);font-size:64px;font-weight:900;-webkit-text-fill-color:rgba(255,255,255,.06);line-height:1;margin-bottom:16px;transition:all 1.2s cubic-bezier(.4,0,.2,1);text-shadow:none;position:relative}
+.step-num.spotlight{-webkit-text-fill-color:rgba(255,255,255,.25);text-shadow:0 0 40px rgba(196,113,59,.5),0 0 80px rgba(196,113,59,.25),0 0 120px rgba(196,113,59,.1)}
 .step h3{font-size:26px;font-weight:700;margin-bottom:20px;letter-spacing:.3px}
 .step-pts{list-style:none;display:flex;flex-direction:column;gap:12px}
 .step-pts li{color:var(--muted);font-size:16px;padding-left:24px;position:relative;font-weight:300;line-height:1.6}
@@ -135,7 +136,7 @@ section{position:relative;z-index:1;overflow:hidden;perspective:1200px}
 .stat::before{content:'';position:absolute;bottom:0;left:0;width:100%;height:0;background:linear-gradient(to top,var(--glow),transparent);transition:height 1.2s cubic-bezier(.4,0,.2,1)}
 .stat.vis::before{height:100%}
 .stat-num{font-family:var(--mono);font-size:clamp(36px,5vw,64px);font-weight:800;position:relative;z-index:1}
-.stat-label{font-family:var(--mono);font-size:9px;letter-spacing:4px;color:var(--dim);text-transform:uppercase;margin-top:12px;position:relative;z-index:1}
+.stat-label{font-family:var(--mono);font-size:9px;letter-spacing:4px;color:var(--muted);text-transform:uppercase;margin-top:12px;position:relative;z-index:1}
 
 /* SERVICES — image cards */
 #services{background:var(--bg2)}
@@ -168,7 +169,7 @@ section{position:relative;z-index:1;overflow:hidden;perspective:1200px}
 .g-label{font-family:var(--mono);font-size:11px;letter-spacing:7px;color:var(--accent);margin-bottom:44px}
 .g-title{font-size:clamp(32px,5.5vw,56px);font-weight:800;line-height:1.1;margin-bottom:28px;letter-spacing:-2px}
 .g-sub{color:var(--muted);font-size:19px;font-weight:300}
-.g-foot{font-family:var(--mono);font-size:11px;letter-spacing:3px;color:var(--dim);margin-top:48px}
+.g-foot{font-family:var(--mono);font-size:11px;letter-spacing:3px;color:var(--muted);margin-top:48px}
 
 /* TERRITORIES */
 #territories{position:relative;text-align:center}
@@ -178,7 +179,7 @@ section{position:relative;z-index:1;overflow:hidden;perspective:1200px}
 .t-stat:hover{background:var(--glow)}
 .t-stat .n{font-family:var(--mono);font-size:40px;font-weight:800;margin-bottom:8px}
 .t-stat .n.ac{color:var(--accent)}
-.t-stat .l{font-family:var(--mono);font-size:9px;letter-spacing:3px;color:var(--dim);text-transform:uppercase}
+.t-stat .l{font-family:var(--mono);font-size:9px;letter-spacing:3px;color:var(--muted);text-transform:uppercase}
 
 /* FAQ */
 #faq{background:var(--bg2)}
@@ -253,17 +254,98 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:72px 56px
 
 /* MOBILE */
 @media(max-width:768px){
-.nav{padding:16px 24px}.nav.scrolled{padding:12px 24px}
+.nav{padding:14px 20px}.nav.scrolled{padding:10px 20px}
 .nav-links{display:none}.hamburger{display:flex;flex-direction:column}
-.inner{padding:120px 28px}
-.stats-grid,.t-stats{grid-template-columns:repeat(2,1fr)}
-.stat:nth-child(2),.t-stat:nth-child(2){border-right:none}
-.stat{border-bottom:1px solid var(--border)}
-.svc-grid{grid-template-columns:1fr}
-.split-row{flex-direction:column}.split-text{padding:40px 0}.split-img{min-height:250px;border-radius:12px}
-.calc-wrap{grid-template-columns:1fr}
-.cta-btns{flex-direction:column;align-items:center}
-.ft-inner{flex-direction:column}
+.logo-text{font-size:15px}
+.inner{padding:100px 20px}
+.title{font-size:clamp(28px,8vw,42px);letter-spacing:-1.5px}
+.hero-title{font-size:clamp(36px,12vw,56px);letter-spacing:-2px}
+.hero-sub{font-size:15px;margin-bottom:40px}
+.hero-tag{font-size:10px;letter-spacing:4px;margin-bottom:32px}
+.hero-guarantee{font-size:10px;letter-spacing:2px}
+.hero-scroll{bottom:24px}
+.label{font-size:9px;letter-spacing:3px}
+.sub{font-size:15px}
+
+/* Problem */
+.problem-line{font-size:clamp(20px,6vw,32px)!important;margin-bottom:20px!important}
+
+/* Split screen — stack */
+.split-row{flex-direction:column!important;gap:24px;margin-top:48px!important}
+.split-text{padding:0!important}
+.split-img{min-height:200px;border-radius:12px}
+.step-num{font-size:48px}
+.step h3{font-size:22px}
+
+/* Stats */
+.stats-grid{grid-template-columns:repeat(2,1fr)}
+.stat{padding:40px 16px;border-bottom:1px solid rgba(255,255,255,.05)}
+.stat:nth-child(2){border-right:none}
+.stat:nth-child(3),.stat:nth-child(4){border-bottom:none}
+.stat-num{font-size:clamp(28px,8vw,40px)}
+.stat-label{font-size:8px;letter-spacing:2px}
+
+/* Services */
+.svc-grid{grid-template-columns:1fr;gap:16px}
+.svc{min-height:220px}
+
+/* Offload */
+.off-item{font-size:clamp(16px,5vw,22px)!important}
+.off-punch{font-size:clamp(22px,6vw,32px)}
+
+/* Guarantee */
+.g-box{padding:56px 28px;border-radius:20px}
+.g-title{font-size:clamp(24px,7vw,36px)}
+.g-label{font-size:9px;letter-spacing:4px;margin-bottom:28px}
+
+/* Territories */
+.t-stats{grid-template-columns:repeat(2,1fr)}
+.t-stat{padding:32px 16px}
+.t-stat:nth-child(2){border-right:none}
+.t-stat .n{font-size:28px}
+.t-stat .l{font-size:8px;letter-spacing:2px}
+
+/* Calculator — FULL MOBILE FIX */
+.calc-wrap{grid-template-columns:1fr!important;gap:40px}
+.calc-in{gap:28px}
+.cf label{font-size:9px;letter-spacing:2px;flex-wrap:wrap;gap:4px}
+.cf label span{font-size:13px}
+.cf select,.cf input[type="number"]{padding:14px 16px;font-size:15px;border-radius:12px}
+.cf input[type="range"]{margin-top:12px}
+.cf input[type="range"]::-webkit-slider-thumb{width:28px;height:28px;border-width:4px}
+.calc-out{grid-template-columns:1fr 1fr;gap:12px}
+.co{padding:24px 18px;border-radius:14px}
+.co-l{font-size:8px;letter-spacing:2px;margin-bottom:8px}
+.co-v{font-size:clamp(24px,7vw,36px)}
+.calc-cta{margin-top:20px}
+.calc-cta p{font-size:14px}
+
+/* CTA */
+.cta-t{font-size:clamp(36px,10vw,56px);letter-spacing:-2px}
+.cta-s{font-size:16px;margin-bottom:36px}
+.cta-btns{flex-direction:column;align-items:stretch;gap:12px}
+.cta-btns .btn{justify-content:center;padding:16px 24px;font-size:14px}
+.cta-f{font-size:9px;letter-spacing:2px;margin-top:40px}
+
+/* FAQ */
+.faq-q{font-size:15px;padding:24px 0}
+.faq-a{font-size:14px}
+.faq-tog{width:28px;height:28px;font-size:14px}
+
+/* Modal */
+.modal{padding:40px 24px;border-radius:20px;width:95%}
+.modal-title{font-size:22px}
+.modal-sub{font-size:14px;margin-bottom:24px}
+.modal-input-wrap{flex-direction:column;gap:10px}
+.modal-input{padding:14px 16px;font-size:15px}
+.modal-btn{padding:14px 24px;font-size:14px;width:100%}
+
+/* Footer */
+.ft-inner{flex-direction:column;gap:36px}
+.ft-bottom{flex-direction:column;align-items:flex-start;gap:12px}
+
+/* Buttons */
+.btn{padding:14px 32px;font-size:14px}
 }
 </style>
 </head>
@@ -430,7 +512,7 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:72px 56px
 <!-- TERRITORIES — night city background -->
 <section id="territories">
 <div class="kb-bg kb1"><img src="https://images.unsplash.com/photo-1514565131-fce0801e5785?w=1920&q=80" alt="" loading="lazy"></div>
-<div class="kb-overlay" style="background:rgba(5,5,5,.9)"></div>
+<div class="kb-overlay" style="background:rgba(5,5,5,.92)"></div>
 <div class="inner">
 <div class="label" data-a="up" style="justify-content:center">Exclusive Territories</div>
 <h2 class="title" data-a="up" data-d=".1" style="text-align:center">One contractor per city.<br>Per service.</h2>
@@ -451,12 +533,14 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:72px 56px
 <div class="label" data-a="up">FAQ</div>
 <h2 class="title" data-a="up" data-d=".1">Common questions.</h2>
 <div class="faq-list" data-a="up" data-d=".2">
-<div class="faq-item"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>How much does it cost?</span><div class="faq-tog">+</div></div><div class="faq-a">Flat monthly retainer + ad spend. No per-lead fees. No surprise charges. We'll break it all down on your strategy call.</div></div>
-<div class="faq-item"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>How fast do I see results?</span><div class="faq-tog">+</div></div><div class="faq-a">Most partners see their first booked appointments within the first 7-10 days of launch.</div></div>
-<div class="faq-item"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>What if I don't get 15 appointments?</span><div class="faq-tog">+</div></div><div class="faq-a">You don't pay us. Simple as that.</div></div>
-<div class="faq-item"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>Do I share leads with other contractors?</span><div class="faq-tog">+</div></div><div class="faq-a">Never. You're the only contractor in your city for your service. Period.</div></div>
-<div class="faq-item"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>What do I need to get started?</span><div class="faq-tog">+</div></div><div class="faq-a">A phone, a calendar, and a service area. We handle everything else.</div></div>
-<div class="faq-item"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>Can I cancel anytime?</span><div class="faq-tog">+</div></div><div class="faq-a">No long-term contracts. If it's not working, you walk. Simple.</div></div>
+<div class="faq-item"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>How much does it cost?</span><div class="faq-tog">+</div></div><div class="faq-a">A flat monthly retainer plus your ad spend. No per-lead fees, no hidden charges, no "credits" that expire. You'll know your exact cost before we start — we break it all down on your strategy call. Nothing hits your card without you knowing why.</div></div>
+<div class="faq-item"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>How fast do I see results?</span><div class="faq-tog">+</div></div><div class="faq-a">Most partners see their first booked appointment within the first few days. Some within 48 hours. Not leads — actual appointments with confirmed homeowners on your calendar. We don't launch and wait. We launch and push.</div></div>
+<div class="faq-item"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>What if I don't get 15 appointments?</span><div class="faq-tog">+</div></div><div class="faq-a">You don't pay us. Simple as that. No runaround, no "credits" to a platform you'll never use again, no 30-day dispute process. We either deliver or you keep your money.</div></div>
+<div class="faq-item"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>Do I share leads with other contractors?</span><div class="faq-tog">+</div></div><div class="faq-a">Never. This isn't Angi — we don't sell your lead to 4-8 other guys and let you fight over it. You are the only contractor in your city for your trade. Every appointment is yours alone. Zero competition.</div></div>
+<div class="faq-item"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>What makes you different from Angi, HomeAdvisor, or Thumbtack?</span><div class="faq-tog">+</div></div><div class="faq-a">They sell leads. We book appointments. They share your lead with a half-dozen competitors. We give you exclusive territory. They lock you into annual contracts and charge you for wrong numbers. We work month to month and guarantee results. The FTC fined HomeAdvisor $7.2M for deceptive lead practices. We've never had a single complaint.</div></div>
+<div class="faq-item"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>What do I need to get started?</span><div class="faq-tog">+</div></div><div class="faq-a">A phone, a calendar, and a service area. We build the ads, the landing pages, and the follow-up system. You don't touch any of it. You just show up to appointments.</div></div>
+<div class="faq-item"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>Do I need to sign a long-term contract?</span><div class="faq-tog">+</div></div><div class="faq-a">No. Month to month. If we don't perform, you walk. No cancellation fees, no termination penalties, no fine print. We keep you because we deliver, not because we trapped you.</div></div>
+<div class="faq-item"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')"><span>What if I've been burned by marketing agencies before?</span><div class="faq-tog">+</div></div><div class="faq-a">Most of our partners have. That's why we don't sell promises — we guarantee appointments. 15 booked in 30 days or you don't pay. If an agency ever told you "leads take time" or "it's a branding play" — that was a red flag. Results show up in the first few days or something's wrong.</div></div>
 </div>
 </div>
 </section>
@@ -474,7 +558,7 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:72px 56px
 <div class="calc-wrap" data-a="up" data-d=".3">
 <div class="calc-in">
 <div class="cf"><label>Industry</label><select id="ci"><option>HVAC</option><option>Roofing</option><option selected>Concrete</option><option>Remodelling</option><option>Decking</option><option>Turfing</option><option>Cabinetry</option></select></div>
-<div class="cf"><label>Average Job Value <span id="d1">$12,000</span></label><input type="number" id="c1" value="12000"></div>
+<div class="cf"><label>Average Job Value <span id="d1">$8,500</span></label><input type="number" id="c1" value="8500"></div>
 <div class="cf"><label>Revenue Goal / Month <span id="d2">$50,000</span></label><input type="number" id="c2" value="50000"></div>
 <div class="cf"><label>Qualified Leads / Month <span id="d3">20</span></label><input type="range" id="c3" min="5" max="150" value="20"></div>
 <div class="cf"><label>Close Rate <span id="d4">30%</span></label><input type="range" id="c4" min="10" max="80" value="30"></div>
@@ -518,27 +602,34 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:72px 56px
 <input type="text" class="modal-input" id="zipInput" placeholder="Enter zip code" maxlength="5" inputmode="numeric" pattern="[0-9]*" onkeydown="if(event.key==='Enter')checkZip()">
 <button class="modal-btn" onclick="checkZip()">Check →</button>
 </div>
-<div id="checkerLocked" style="display:none;text-align:center;padding:16px 0"><p style="color:var(--dim);font-size:13px;font-family:var(--mono);letter-spacing:1px">ONE CHECK PER VISIT</p></div>
+<div id="checkerLoading" style="display:none;text-align:center;padding:24px 0">
+<div style="font-size:14px;color:var(--muted);font-family:var(--mono);letter-spacing:1px">Checking availability<span id="loadDots">...</span></div>
+</div>
 <div class="modal-result" id="resultAvailable">
-<div style="font-size:32px;margin-bottom:12px">✓</div>
-<div style="font-size:18px;font-weight:600;color:#48bb78;margin-bottom:8px">This territory is wide open!</div>
-<div style="color:var(--muted);font-size:14px;line-height:1.7;margin-bottom:20px">All trades are available in your area. Claim your exclusive territory before a competitor locks it down.</div>
+<div style="color:var(--dim);font-size:13px;font-family:var(--mono);letter-spacing:1px;margin-bottom:16px" id="locationCallout"></div>
+<div style="font-size:36px;margin-bottom:16px">🎯</div>
+<div style="font-size:22px;font-weight:700;color:#48bb78;margin-bottom:12px">You're in luck.</div>
+<div style="color:var(--text);font-size:16px;line-height:1.7;margin-bottom:8px">Your territory is wide open — no one has claimed this area yet.</div>
+<div style="color:var(--muted);font-size:14px;line-height:1.7;margin-bottom:24px">We only partner with one contractor per zip code. Once it's taken, it's gone. Don't sleep on this.</div>
 <a href="https://calendly.com/thehammerlist" target="_blank" class="btn btn-p" style="width:100%;justify-content:center">Claim This Territory →</a>
 </div>
 <div class="modal-result" id="resultPartial">
-<div style="font-size:32px;margin-bottom:12px">⚡</div>
-<div style="font-size:18px;font-weight:600;color:#f59e42;margin-bottom:8px">Some trades are already taken.</div>
-<div style="color:var(--muted);font-size:14px;line-height:1.7;text-align:left;margin-top:16px">
-<span style="display:block;margin-bottom:12px"><span style="color:#f59e42;font-weight:600">🔒 Claimed:</span> <span id="partialClaimed" style="color:var(--muted)"></span></span>
-<span style="display:block;margin-bottom:16px"><span style="color:#48bb78;font-weight:600">✓ Still open:</span> <span id="partialOpen" style="color:var(--text)"></span></span>
-<span style="display:block;color:var(--muted);font-size:13px">These open trades won't last long. Once a contractor claims your zip, it's closed permanently.</span>
+<div style="color:var(--dim);font-size:13px;font-family:var(--mono);letter-spacing:1px;margin-bottom:16px" id="locationCalloutPartial"></div>
+<div style="font-size:36px;margin-bottom:16px">⚡</div>
+<div style="font-size:22px;font-weight:700;color:#f59e42;margin-bottom:12px">You're not too late — but close.</div>
+<div style="color:var(--text);font-size:15px;line-height:1.7;margin-bottom:16px">A contractor in your area already locked in a trade. But there's still room.</div>
+<div style="text-align:left;margin-bottom:20px">
+<div style="margin-bottom:12px"><span style="color:#f59e42;font-weight:600">🔒 Taken:</span> <span id="partialClaimed" style="color:var(--muted)"></span></div>
+<div style="margin-bottom:16px"><span style="color:#48bb78;font-weight:600">✓ Still open:</span> <span id="partialOpen" style="color:var(--text)"></span></div>
+<div style="color:var(--muted);font-size:13px;line-height:1.6">These won't last. Once a contractor locks in your zip, that trade is gone permanently.</div>
 </div>
-<a href="https://calendly.com/thehammerlist" target="_blank" class="btn btn-p" style="width:100%;justify-content:center;margin-top:16px">Lock In Your Trade →</a>
+<a href="https://calendly.com/thehammerlist" target="_blank" class="btn btn-p" style="width:100%;justify-content:center">Lock In Your Trade →</a>
 </div>
 <div class="modal-result" id="resultClaimed">
-<div style="font-size:32px;margin-bottom:12px">🔒</div>
-<div style="font-size:18px;font-weight:600;color:#f59e42;margin-bottom:8px">This territory is fully claimed.</div>
-<div style="color:var(--muted);font-size:14px;line-height:1.7;margin-bottom:20px">All trades in this zip code are taken. Nearby areas may still be open — book a call and we'll find you a territory.</div>
+<div style="color:var(--dim);font-size:13px;font-family:var(--mono);letter-spacing:1px;margin-bottom:16px" id="locationCalloutClaimed"></div>
+<div style="font-size:36px;margin-bottom:16px">🔒</div>
+<div style="font-size:22px;font-weight:700;color:#f59e42;margin-bottom:12px">This territory is fully claimed.</div>
+<div style="color:var(--muted);font-size:15px;line-height:1.7;margin-bottom:24px">All trades in this area are taken. But nearby territories may still be open — let's find you one.</div>
 <a href="https://calendly.com/thehammerlist" target="_blank" class="btn btn-p" style="width:100%;justify-content:center">Check Nearby Areas →</a>
 </div>
 </div>
@@ -607,6 +698,10 @@ document.querySelectorAll('.off-item').forEach(el=>offObs.observe(el));
 // ═══ COUNTERS ═══
 function animC(el,s,end,dur,m){const st=performance.now();const sx=end>=850?'+':'';function u(n){const e=n-st;const p=Math.min(e/dur,1);const ea=1-Math.pow(1-p,4);const c=Math.round(s+(end-s)*ea);if(m){if(p>=1)el.textContent='$2.4M+';else el.textContent='$'+c.toLocaleString()}else el.textContent=c+sx;if(p<1)requestAnimationFrame(u)}requestAnimationFrame(u)}
 
+// ═══ SPOTLIGHT ON STEP NUMBERS ═══
+const spotObs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('spotlight')})},{threshold:.5});
+document.querySelectorAll('.step-num').forEach(el=>spotObs.observe(el));
+
 // ═══ SPLIT TEXT ═══
 document.querySelectorAll('[data-split]').forEach(el=>{const t=el.innerHTML;const lines=t.split('<br>');el.innerHTML='';let ci=0;lines.forEach((line,li)=>{line.trim().split(' ').forEach(word=>{const s=document.createElement('span');s.style.display='inline-block';s.style.marginRight='0.3em';[...word].forEach(ch=>{const c=document.createElement('span');c.className='split-char';c.textContent=ch;c.style.transitionDelay=(ci*.04)+'s';s.appendChild(c);ci++});el.appendChild(s)});if(li<lines.length-1)el.appendChild(document.createElement('br'))});
 const so=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting)el.querySelectorAll('.split-char').forEach(c=>c.classList.add('vis'))})},{threshold:.3});so.observe(el)});
@@ -621,15 +716,71 @@ let tk=false;addEventListener('scroll',()=>{if(!tk){requestAnimationFrame(()=>{d
 
 // ═══ TERRITORY CHECKER ═══
 const claimedTerritories={'75201':['Remodelling'],'75202':['Remodelling'],'75203':['Remodelling'],'75204':['Remodelling'],'75205':['Remodelling'],'55401':['HVAC'],'55402':['HVAC'],'55403':['HVAC'],'55404':['HVAC'],'80202':['Concrete'],'80203':['Concrete'],'80204':['Concrete'],'89101':['Turfing'],'89102':['Turfing'],'89103':['Turfing'],'89104':['Turfing'],'89109':['Turfing'],'89119':['Turfing'],'89128':['Turfing'],'89134':['Turfing'],'89144':['Turfing'],'89148':['Turfing'],'84101':['Concrete'],'84102':['Concrete'],'84103':['Concrete'],'84104':['Concrete'],'84105':['Concrete'],'84111':['Concrete'],'84115':['Concrete'],'70112':['HVAC'],'70113':['HVAC'],'70114':['HVAC'],'70115':['HVAC'],'70116':['HVAC'],'70117':['HVAC'],'70118':['HVAC'],'70119':['HVAC'],'70122':['HVAC'],'70124':['HVAC'],'73301':['Decking'],'85001':['Roofing'],'85003':['Roofing'],'85004':['Roofing'],'59101':['Decking'],'59102':['Decking'],'59105':['Decking'],'59106':['Decking'],'59801':['Decking'],'59802':['Decking'],'59803':['Decking'],'59804':['Decking'],'59401':['Decking'],'59404':['Decking'],'59405':['Decking'],'59715':['Decking'],'59718':['Decking'],'59714':['Decking'],'59601':['Decking'],'59602':['Decking']};
-const allTrades=['HVAC','Roofing','Concrete','Remodelling','Decking','Turfing','Cabinetry'];let hasChecked=false;
-function openChecker(){const m=document.getElementById('checkerModal');m.classList.add('open');if(!hasChecked){document.getElementById('zipInput').value='';document.getElementById('resultAvailable').className='modal-result';document.getElementById('resultPartial').className='modal-result';document.getElementById('resultClaimed').className='modal-result';setTimeout(()=>document.getElementById('zipInput').focus(),300)}}
+const allTrades=['HVAC','Roofing','Concrete','Remodelling','Decking','Turfing','Cabinetry'];
+let checking=false;
+
+function openChecker(){
+const m=document.getElementById('checkerModal');m.classList.add('open');
+document.getElementById('checkerForm').style.display='flex';
+document.getElementById('checkerLoading').style.display='none';
+document.getElementById('resultAvailable').className='modal-result';
+document.getElementById('resultPartial').className='modal-result';
+document.getElementById('resultClaimed').className='modal-result';
+document.getElementById('zipInput').value='';
+setTimeout(()=>document.getElementById('zipInput').focus(),300);
+}
 function closeChecker(){document.getElementById('checkerModal').classList.remove('open')}
-function checkZip(){if(hasChecked)return;const z=document.getElementById('zipInput').value.trim();if(!z||z.length!==5||!/^\d{5}$/.test(z))return;hasChecked=true;document.getElementById('checkerForm').style.display='none';document.getElementById('checkerLocked').style.display='block';const cl=claimedTerritories[z]||[];if(cl.length===0){document.getElementById('resultAvailable').className='modal-result available'}else if(cl.length<allTrades.length){const op=allTrades.filter(t=>!cl.includes(t));document.getElementById('partialClaimed').textContent=cl.join(', ');document.getElementById('partialOpen').textContent=op.join(', ');document.getElementById('resultPartial').className='modal-result claimed'}else{document.getElementById('resultClaimed').className='modal-result claimed'}}
+
+async function checkZip(){
+if(checking)return;
+const z=document.getElementById('zipInput').value.trim();
+if(!z||z.length!==5||!/^\d{5}$/.test(z))return;
+checking=true;
+
+// Hide form, show loading
+document.getElementById('checkerForm').style.display='none';
+document.getElementById('checkerLoading').style.display='block';
+
+// Look up city/state from zip
+let cityState='';
+try{
+const resp=await fetch('https://api.zippopotam.us/us/'+z);
+if(resp.ok){const data=await resp.json();cityState=data.places[0]['place name']+', '+data.places[0]['state abbreviation']}
+}catch(e){}
+
+// Dramatic pause
+await new Promise(r=>setTimeout(r,1800));
+document.getElementById('checkerLoading').style.display='none';
+
+const cl=claimedTerritories[z]||[];
+const locationText=cityState?cityState.toUpperCase():'';
+
+if(cl.length===0){
+document.getElementById('locationCallout').textContent=locationText;
+document.getElementById('resultAvailable').className='modal-result available';
+}else if(cl.length<allTrades.length){
+const op=allTrades.filter(t=>!cl.includes(t));
+document.getElementById('locationCalloutPartial').textContent=locationText;
+document.getElementById('partialClaimed').textContent=cl.join(', ');
+document.getElementById('partialOpen').textContent=op.join(', ');
+document.getElementById('resultPartial').className='modal-result claimed';
+}else{
+document.getElementById('locationCalloutClaimed').textContent=locationText;
+document.getElementById('resultClaimed').className='modal-result claimed';
+}
+checking=false;
+}
+
 function sendToGHL(z,st,ct){const w='YOUR_GHL_WEBHOOK_URL_HERE';fetch(w,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({zip_code:z,territory_status:st,claimed_trades:ct.join(', '),checked_at:new Date().toISOString(),source:'website_territory_checker'})}).catch(()=>{})}
 
 // ═══ CALCULATOR ═══
+const tradePresets={HVAC:9500,Roofing:11000,Concrete:8500,Remodelling:35000,Decking:16000,Turfing:8500,Cabinetry:15000};
 function calc(){const jv=+document.getElementById('c1').value||0;const g=+document.getElementById('c2').value||0;const l=+document.getElementById('c3').value;const cr=+document.getElementById('c4').value/100;const m=+document.getElementById('c5').value/100;const rev=l*cr*jv,prof=rev*m,jobs=Math.round(l*cr);const need=cr>0&&jv>0?Math.ceil(g/(cr*jv)):0;document.getElementById('o1').textContent='$'+Math.round(rev).toLocaleString();document.getElementById('o2').textContent='$'+Math.round(prof).toLocaleString();document.getElementById('o3').textContent=jobs;document.getElementById('o4').textContent=need;document.getElementById('d1').textContent='$'+Math.round(jv).toLocaleString();document.getElementById('d2').textContent='$'+Math.round(g).toLocaleString();document.getElementById('d3').textContent=l;document.getElementById('d4').textContent=document.getElementById('c4').value+'%';document.getElementById('d5').textContent=document.getElementById('c5').value+'%'}
-document.querySelectorAll('#c1,#c2,#c3,#c4,#c5,#ci').forEach(el=>el.addEventListener('input',calc));calc();
+document.getElementById('ci').addEventListener('change',function(){const val=tradePresets[this.value];if(val){document.getElementById('c1').value=val;calc()}});
+document.querySelectorAll('#c1,#c2,#c3,#c4,#c5,#ci').forEach(el=>el.addEventListener('input',calc));
+// Set initial value based on default selected trade
+document.getElementById('c1').value=tradePresets[document.getElementById('ci').value]||8500;
+calc();
 </script>
 </body>
 </html>
