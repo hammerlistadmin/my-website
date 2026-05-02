@@ -154,12 +154,10 @@ section{position:relative;z-index:1;overflow:hidden;perspective:1200px}
 /* OFFLOAD */
 #offload{position:relative}
 .off-list{margin-top:64px;max-width:700px;display:flex;flex-direction:column;gap:28px}
-.off-item{font-size:clamp(20px,3vw,28px);color:var(--muted);font-weight:400;position:relative;display:block;line-height:1.4;cursor:pointer;transition:color .3s}
-.off-item .strike{position:absolute;left:0;top:50%;height:2px;background:var(--accent);width:0;transition:width 1.2s cubic-bezier(.4,0,.2,1)}
-.off-item.vis{color:var(--dim)}
-.off-item.vis .strike{width:100%}
-.off-item.vis:hover{color:var(--text)}
-.off-item.vis:hover .strike{width:0;transition:width .4s ease}
+.off-item{font-size:clamp(20px,3vw,28px);color:var(--muted);font-weight:400;position:relative;display:block;line-height:1.4;cursor:pointer;transition:color .3s;text-decoration:line-through;text-decoration-color:transparent;text-decoration-thickness:2px;-webkit-text-decoration-color:transparent}
+.off-item .strike{display:none}
+.off-item.vis{color:var(--dim);text-decoration-color:var(--accent);-webkit-text-decoration-color:var(--accent);transition:color .3s, text-decoration-color 1.2s cubic-bezier(.4,0,.2,1), -webkit-text-decoration-color 1.2s cubic-bezier(.4,0,.2,1)}
+.off-item.vis:hover{color:var(--text);text-decoration-color:transparent;-webkit-text-decoration-color:transparent;transition:color .3s, text-decoration-color .4s ease, -webkit-text-decoration-color .4s ease}
 .off-punch{font-size:clamp(26px,4vw,42px);font-weight:700;color:var(--text);margin-top:64px;line-height:1.2;letter-spacing:-1px}
 
 /* GUARANTEE — gradient mesh */
@@ -337,9 +335,9 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:72px 56px
 .cf input[type="range"]{margin-top:12px}
 .cf input[type="range"]::-webkit-slider-thumb{width:28px;height:28px;border-width:4px}
 .calc-out{grid-template-columns:1fr 1fr;gap:12px}
-.co{padding:24px 18px;border-radius:14px}
+.co{padding:24px 18px;border-radius:14px;overflow:hidden}
 .co-l{font-size:8px;letter-spacing:2px;margin-bottom:8px}
-.co-v{font-size:clamp(24px,7vw,36px)}
+.co-v{font-size:clamp(18px,5.5vw,36px);word-break:break-all;overflow-wrap:anywhere}
 .calc-cta{margin-top:20px}
 .calc-cta p{font-size:14px}
 
@@ -984,7 +982,8 @@ function sendToGHL(z,st,ct){const w='YOUR_GHL_WEBHOOK_URL_HERE';fetch(w,{method:
 
 // ═══ CALCULATOR ═══
 const tradePresets={HVAC:9500,Roofing:11000,Concrete:8500,Remodelling:35000,Decking:16000,Turfing:8500,Cabinetry:15000};
-function calc(){const jv=+document.getElementById('c1').value||0;const g=+document.getElementById('c2').value||0;const l=+document.getElementById('c3').value;const cr=+document.getElementById('c4').value/100;const m=+document.getElementById('c5').value/100;const rev=l*cr*jv,prof=rev*m,jobs=Math.round(l*cr);const need=cr>0&&jv>0?Math.ceil(g/(cr*jv)):0;document.getElementById('o1').textContent='$'+Math.round(rev).toLocaleString();document.getElementById('o2').textContent='$'+Math.round(prof).toLocaleString();document.getElementById('o3').textContent=jobs;document.getElementById('o4').textContent=need;document.getElementById('d1').textContent='$'+Math.round(jv).toLocaleString();document.getElementById('d2').textContent='$'+Math.round(g).toLocaleString();document.getElementById('d3').textContent=l;document.getElementById('d4').textContent=document.getElementById('c4').value+'%';document.getElementById('d5').textContent=document.getElementById('c5').value+'%'}
+function fmtMoney(n){if(n>=1000000)return'$'+( n%1000000===0?Math.round(n/1000000):(n/1000000).toFixed(1).replace(/\.0$/,''))+'M';if(n>=100000)return'$'+Math.round(n/1000)+'K';return'$'+Math.round(n).toLocaleString()}
+function calc(){const jv=+document.getElementById('c1').value||0;const g=+document.getElementById('c2').value||0;const l=+document.getElementById('c3').value;const cr=+document.getElementById('c4').value/100;const m=+document.getElementById('c5').value/100;const rev=l*cr*jv,prof=rev*m,jobs=Math.round(l*cr);const need=cr>0&&jv>0?Math.ceil(g/(cr*jv)):0;document.getElementById('o1').textContent=fmtMoney(rev);document.getElementById('o2').textContent=fmtMoney(prof);document.getElementById('o3').textContent=jobs;document.getElementById('o4').textContent=need;document.getElementById('d1').textContent='$'+Math.round(jv).toLocaleString();document.getElementById('d2').textContent='$'+Math.round(g).toLocaleString();document.getElementById('d3').textContent=l;document.getElementById('d4').textContent=document.getElementById('c4').value+'%';document.getElementById('d5').textContent=document.getElementById('c5').value+'%'}
 document.getElementById('ci').addEventListener('change',function(){const val=tradePresets[this.value];if(val){document.getElementById('c1').value=val;calc()}});
 document.querySelectorAll('#c1,#c2,#c3,#c4,#c5,#ci').forEach(el=>el.addEventListener('input',calc));
 // Set initial value based on default selected trade
