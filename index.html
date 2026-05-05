@@ -35,13 +35,18 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);overflow-x:h
 @keyframes kb2{0%{transform:scale(1.1) translate(-1%,-1%)}100%{transform:scale(1) translate(1%,1%)}}
 @keyframes kb3{0%{transform:scale(1.05) translate(1%,0)}100%{transform:scale(1.18) translate(-1%,-2%)}}
 @keyframes kb4{0%{transform:scale(1.12) translate(-2%,1%)}100%{transform:scale(1.02) translate(0,0)}}
+@keyframes kb5{0%{transform:scale(1.02) translate(0,2%)}50%{transform:scale(1.12) translate(-1%,-1%)}100%{transform:scale(1.06) translate(1%,0)}}
 .kb-bg{position:absolute;inset:0;z-index:0;overflow:hidden}
-.kb-bg img{width:100%;height:100%;object-fit:cover;will-change:transform}
-.kb-bg.kb1 img{animation:kb1 25s ease-in-out infinite alternate}
-.kb-bg.kb2 img{animation:kb2 22s ease-in-out infinite alternate}
-.kb-bg.kb3 img{animation:kb3 28s ease-in-out infinite alternate}
-.kb-bg.kb4 img{animation:kb4 20s ease-in-out infinite alternate}
+.kb-bg img,.kb-bg video{width:100%;height:100%;object-fit:cover;will-change:transform}
+.kb-bg.kb1 img,.kb-bg.kb1 video{animation:kb1 25s ease-in-out infinite alternate}
+.kb-bg.kb2 img,.kb-bg.kb2 video{animation:kb2 22s ease-in-out infinite alternate}
+.kb-bg.kb3 img,.kb-bg.kb3 video{animation:kb3 28s ease-in-out infinite alternate}
+.kb-bg.kb4 img,.kb-bg.kb4 video{animation:kb4 20s ease-in-out infinite alternate}
+.kb-bg.kb5 img,.kb-bg.kb5 video{animation:kb5 30s ease-in-out infinite}
 .kb-overlay{position:absolute;inset:0;z-index:1}
+/* Shimmer overlay — subtle moving light for water-like feel */
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+.shimmer-overlay{position:absolute;inset:0;z-index:1;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.015) 45%,rgba(255,255,255,.03) 50%,rgba(255,255,255,.015) 55%,transparent 60%);background-size:200% 100%;animation:shimmer 8s ease-in-out infinite;pointer-events:none}
 
 /* GRADIENT MESH */
 @keyframes meshShift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
@@ -161,7 +166,7 @@ section{position:relative;z-index:1;overflow:hidden;perspective:1200px}
 .off-punch{font-size:clamp(26px,4vw,42px);font-weight:700;color:var(--text);margin-top:64px;line-height:1.2;letter-spacing:-1px}
 
 /* GUARANTEE — gradient mesh */
-#guarantee{position:relative;text-align:center}
+#guarantee{position:relative;text-align:center;overflow:hidden}
 .g-box{border:1px solid var(--border);border-radius:28px;padding:100px 72px;max-width:760px;margin:0 auto;position:relative;overflow:hidden;z-index:2;background:rgba(10,10,10,.6);backdrop-filter:blur(20px);transition:all .6s}
 .g-box:hover{border-color:rgba(196,113,59,.2);transform:scale(1.01)}
 .g-label{font-family:var(--mono);font-size:11px;letter-spacing:7px;color:var(--accent);margin-bottom:44px}
@@ -180,7 +185,7 @@ section{position:relative;z-index:1;overflow:hidden;perspective:1200px}
 .t-stat .l{font-family:var(--mono);font-size:9px;letter-spacing:3px;color:var(--muted);text-transform:uppercase}
 
 /* FAQ */
-#faq{background:var(--bg2)}
+#faq{position:relative;overflow:hidden}
 .faq-list{margin-top:64px;max-width:720px}
 .faq-item{border-bottom:1px solid var(--border)}
 .faq-q{padding:32px 0;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-size:17px;font-weight:500;transition:all .4s;user-select:none}
@@ -367,6 +372,16 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:72px 56px
 
 /* Buttons */
 .btn{padding:14px 32px;font-size:14px}
+
+/* ═══ MOBILE PERFORMANCE ═══ */
+.grain,.cursor-glow,.orb,.shimmer-overlay{display:none!important}
+.kb-bg img,.kb-bg video{animation:none!important;will-change:auto!important;transform:scale(1.05)!important}
+.g-box{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:rgba(10,10,10,.85)!important}
+.map-tooltip{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:rgba(15,15,15,.95)!important}
+.nav.scrolled{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:rgba(5,5,5,.95)!important}
+[data-a]{will-change:auto!important}
+.map-dot::after{display:none!important}
+.map-dot::before{animation:none!important;opacity:.9!important;transform:scale(1)!important}
 }
 </style>
 </head>
@@ -499,7 +514,7 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:72px 56px
 <!-- OFFLOAD — dark tools background -->
 <section id="offload">
 <div class="kb-bg kb3"><img src="https://images.unsplash.com/photo-1530124566582-a45a7e3ff706?w=1920&q=80" alt="" loading="lazy"></div>
-<div class="kb-overlay" style="background:linear-gradient(90deg,rgba(5,5,5,.95) 0%,rgba(5,5,5,.85) 60%,rgba(5,5,5,.75) 100%)"></div>
+<div class="kb-overlay" style="background:linear-gradient(90deg,rgba(5,5,5,.93) 0%,rgba(5,5,5,.85) 60%,rgba(5,5,5,.78) 100%)"></div>
 <div class="inner">
 <div class="label" data-a="up">Your Time Back</div>
 <h2 class="title" data-a="up" data-d=".1">What you<br>never touch.</h2>
@@ -530,9 +545,9 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:72px 56px
 </div>
 </section>
 
-<!-- TERRITORIES — night city background -->
+<!-- TERRITORIES — aerial suburban neighborhoods -->
 <section id="territories">
-<div class="kb-bg kb1"><img src="https://images.unsplash.com/photo-1514565131-fce0801e5785?w=1920&q=80" alt="" loading="lazy"></div>
+<div class="kb-bg kb4"><img src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=1920&q=80" alt="" loading="lazy"></div>
 <div class="kb-overlay" style="background:rgba(5,5,5,.92)"></div>
 <div class="inner">
 <div class="label" data-a="up" style="justify-content:center">Exclusive Territories</div>
@@ -645,8 +660,11 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:72px 56px
 </div>
 </section>
 
-<!-- FAQ -->
+<!-- FAQ — warm backyard home scene -->
 <section id="faq">
+<div class="kb-bg kb3"><img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1920&q=80" alt="" loading="lazy"></div>
+<div class="shimmer-overlay"></div>
+<div class="kb-overlay" style="background:rgba(5,5,5,.92)"></div>
 <div class="inner">
 <div class="label" data-a="up">FAQ</div>
 <h2 class="title" data-a="up" data-d=".1">Common questions.</h2>
@@ -665,9 +683,10 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:72px 56px
 
 <div class="glow-line"></div>
 
-<!-- CALC — subtle blueprint background -->
+<!-- CALC — backyard pool, what contractors build -->
 <section id="calc">
-<div class="kb-bg kb4"><img src="https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=1920&q=80" alt="" loading="lazy"></div>
+<div class="kb-bg kb3"><img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1920&q=80" alt="" loading="lazy"></div>
+<div class="shimmer-overlay"></div>
 <div class="kb-overlay" style="background:rgba(5,5,5,.93)"></div>
 <div class="inner">
 <div class="label" data-a="up">ROI Calculator</div>
@@ -693,10 +712,11 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:72px 56px
 </div>
 </section>
 
-<!-- CTA — aerial night city -->
+<!-- CTA — ocean golden hour -->
 <section id="cta">
-<div class="kb-bg kb2"><img src="https://images.unsplash.com/photo-1444723121867-7a241cacace9?w=1920&q=80" alt="" loading="lazy"></div>
-<div class="kb-overlay" style="background:radial-gradient(ellipse at center,rgba(5,5,5,.75),rgba(5,5,5,.95))"></div>
+<div class="kb-bg kb5"><img src="https://images.unsplash.com/photo-1439405326854-014607f694d7?w=1920&q=80" alt="" loading="lazy"></div>
+<div class="shimmer-overlay"></div>
+<div class="kb-overlay" style="background:radial-gradient(ellipse at center,rgba(5,5,5,.72),rgba(5,5,5,.92))"></div>
 <div class="inner" style="text-align:center">
 <div class="label" data-a="up" style="justify-content:center">Let's Go</div>
 <h2 class="cta-t" data-split>Claim Your City.</h2>
@@ -770,9 +790,16 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:72px 56px
 <div class="ft-bottom"><p class="ft-copy">&copy; 2026 The Hammer List Inc. All rights reserved.</p><div class="ft-legal"><a href="/privacy">Privacy</a><a href="/terms">Terms</a></div></div>
 </footer>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
-// ═══ THREE.JS PARTICLES ═══
+const isMobile=window.innerWidth<=768||/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+if(isMobile){document.querySelectorAll('.kb-bg img,.hero-bg img,.split-img img').forEach(img=>{if(img.src.includes('w=1920'))img.src=img.src.replace('w=1920','w=800');if(img.src.includes('w=800')&&img.src.includes('q=80'))img.src=img.src.replace('q=80','q=60')})}
+</script>
+<script>
+// ═══ THREE.JS PARTICLES — DESKTOP ONLY ═══
+if(!isMobile){
+const s3=document.createElement('script');
+s3.src='https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+s3.onload=function(){
 const canvas=document.createElement('canvas');
 canvas.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none';
 document.body.prepend(canvas);
@@ -786,20 +813,25 @@ const pts=new THREE.Points(geo,new THREE.PointsMaterial({color:0xc4713b,size:.02
 scene.add(pts);
 const lGeo=new THREE.BufferGeometry(),lPos=new Float32Array(N*6);lGeo.setAttribute('position',new THREE.BufferAttribute(lPos,3));
 scene.add(new THREE.LineSegments(lGeo,new THREE.LineBasicMaterial({color:0xc4713b,transparent:true,opacity:.03})));
-let sy=0,mx=0;
-(function anim(){requestAnimationFrame(anim);const p=geo.attributes.position.array;for(let i=0;i<N*3;i+=3){p[i]+=vel[i];p[i+1]+=vel[i+1];p[i+2]+=vel[i+2];if(Math.abs(p[i])>12)vel[i]*=-1;if(Math.abs(p[i+1])>12)vel[i+1]*=-1;if(Math.abs(p[i+2])>6)vel[i+2]*=-1}geo.attributes.position.needsUpdate=true;let li=0;const lp=lGeo.attributes.position.array;for(let i=0;i<N*3&&li<N*6;i+=3)for(let j=i+3;j<N*3&&li<N*6;j+=3){const dx=p[i]-p[j],dy=p[i+1]-p[j+1],dz=p[i+2]-p[j+2];if(dx*dx+dy*dy+dz*dz<3){lp[li++]=p[i];lp[li++]=p[i+1];lp[li++]=p[i+2];lp[li++]=p[j];lp[li++]=p[j+1];lp[li++]=p[j+2]}}for(let i=li;i<N*6;i++)lp[i]=0;lGeo.attributes.position.needsUpdate=true;cam.position.y=-sy*.0008;cam.position.x+=(.0003*mx-cam.position.x)*.03;pts.rotation.y+=.0002;renderer.render(scene,cam)})();
+let sy3=0,mx3=0;
+addEventListener('scroll',()=>{sy3=scrollY});
+addEventListener('mousemove',e=>{mx3=e.clientX-innerWidth/2});
+(function anim(){requestAnimationFrame(anim);const p=geo.attributes.position.array;for(let i=0;i<N*3;i+=3){p[i]+=vel[i];p[i+1]+=vel[i+1];p[i+2]+=vel[i+2];if(Math.abs(p[i])>12)vel[i]*=-1;if(Math.abs(p[i+1])>12)vel[i+1]*=-1;if(Math.abs(p[i+2])>6)vel[i+2]*=-1}geo.attributes.position.needsUpdate=true;let li=0;const lp=lGeo.attributes.position.array;for(let i=0;i<N*3&&li<N*6;i+=3)for(let j=i+3;j<N*3&&li<N*6;j+=3){const dx=p[i]-p[j],dy=p[i+1]-p[j+1],dz=p[i+2]-p[j+2];if(dx*dx+dy*dy+dz*dz<3){lp[li++]=p[i];lp[li++]=p[i+1];lp[li++]=p[i+2];lp[li++]=p[j];lp[li++]=p[j+1];lp[li++]=p[j+2]}}for(let i=li;i<N*6;i++)lp[i]=0;lGeo.attributes.position.needsUpdate=true;cam.position.y=-sy3*.0008;cam.position.x+=(.0003*mx3-cam.position.x)*.03;pts.rotation.y+=.0002;renderer.render(scene,cam)})();
 addEventListener('resize',()=>{cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+};document.head.appendChild(s3);
+}
 
-// ═══ CURSOR GLOW ═══
+// ═══ CURSOR GLOW — DESKTOP ONLY ═══
+if(!isMobile){
 const glow=document.getElementById('cursorGlow');let gx=0,gy=0,tx=0,ty=0;
-addEventListener('mousemove',e=>{tx=e.clientX;ty=e.clientY;mx=e.clientX-innerWidth/2});
+addEventListener('mousemove',e=>{tx=e.clientX;ty=e.clientY});
 (function cg(){gx+=(tx-gx)*.08;gy+=(ty-gy)*.08;glow.style.transform=`translate(${gx-200}px,${gy-200}px)`;requestAnimationFrame(cg)})();
+}
 
 // ═══ SCROLL ═══
 addEventListener('scroll',()=>{
-sy=scrollY;
-document.getElementById('nav').classList.toggle('scrolled',sy>100);
-document.getElementById('prog').style.transform=`scaleX(${sy/(document.body.scrollHeight-innerHeight)})`;
+document.getElementById('nav').classList.toggle('scrolled',scrollY>100);
+document.getElementById('prog').style.transform=`scaleX(${scrollY/(document.body.scrollHeight-innerHeight)})`;
 });
 
 // ═══ SCROLL REVEAL ═══
@@ -831,13 +863,17 @@ document.querySelectorAll('.step-num').forEach(el=>spotObs.observe(el));
 document.querySelectorAll('[data-split]').forEach(el=>{const t=el.innerHTML;const lines=t.split('<br>');el.innerHTML='';let ci=0;lines.forEach((line,li)=>{line.trim().split(' ').forEach(word=>{const s=document.createElement('span');s.style.display='inline-block';s.style.marginRight='0.3em';[...word].forEach(ch=>{const c=document.createElement('span');c.className='split-char';c.textContent=ch;c.style.transitionDelay=(ci*.04)+'s';s.appendChild(c);ci++});el.appendChild(s)});if(li<lines.length-1)el.appendChild(document.createElement('br'))});
 const so=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting)el.querySelectorAll('.split-char').forEach(c=>c.classList.add('vis'))})},{threshold:.3});so.observe(el)});
 
-// ═══ 3D TILT ═══
+// ═══ 3D TILT — DESKTOP ONLY ═══
+if(!isMobile){
 document.querySelectorAll('.svc,.co,.g-box').forEach(card=>{
 card.addEventListener('mousemove',e=>{const r=card.getBoundingClientRect();const rx=((e.clientY-r.top)/r.height-.5)*-14;const ry=((e.clientX-r.left)/r.width-.5)*14;card.style.transform=`perspective(600px) rotateX(${rx}deg) rotateY(${ry}deg) translateY(-10px) scale(1.03)`;card.style.transition='transform .1s ease-out'});
 card.addEventListener('mouseleave',()=>{card.style.transform='';card.style.transition='transform .5s cubic-bezier(.4,0,.2,1)'})});
+}
 
-// ═══ PARALLAX ═══
+// ═══ PARALLAX — DESKTOP ONLY ═══
+if(!isMobile){
 let tk=false;addEventListener('scroll',()=>{if(!tk){requestAnimationFrame(()=>{document.querySelectorAll('section').forEach(s=>{const r=s.getBoundingClientRect();const c=(r.top+r.height/2-innerHeight/2)/innerHeight;const inn=s.querySelector('.inner');if(inn){inn.style.transform=`translateY(${c*-20}px)`;inn.style.transition='transform .1s linear'}});tk=false});tk=true}});
+}
 
 // ═══ MAP TOOLTIPS ═══
 (function(){
