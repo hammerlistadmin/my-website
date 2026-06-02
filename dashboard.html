@@ -767,7 +767,7 @@ async function loadOverview() {
       <div class="stat-change">${metrics.appts_booked ? Math.round((metrics.appts_shown||0)/(metrics.appts_booked)*100) : 0}% show rate</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">Meta Meta Leads</div>
+      <div class="stat-label">Meta Leads</div>
       <div class="stat-val blue">${metrics.leads || 0}</div>
       <div class="stat-change">From Meta campaigns</div>
     </div>
@@ -996,7 +996,7 @@ async function loadAdminClients() {
   if (!clients.length) { wrap.innerHTML = '<div class="empty"><div class="empty-icon">👥</div>No clients found</div>'; return; }
 
   wrap.innerHTML = `<table>
-    <thead><tr><th>Client</th><th>Trade</th><th>City</th><th>Appts</th><th>Leads</th><th>Spend</th><th>Status</th></tr></thead>
+    <thead><tr><th>Client</th><th>Trade</th><th>City</th><th>Appts</th><th>Meta Leads</th><th>Spend</th><th>Status</th></tr></thead>
     <tbody>${clients.map(c => {
       const m = c.metrics || {};
       return `<tr class="client-row" onclick="drillClient('${c.id}')">
