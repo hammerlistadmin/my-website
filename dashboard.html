@@ -640,13 +640,15 @@ const GUEST_CLIENTS = [
 function getGuestMetrics(id) {
   const i = parseInt(id.replace('g',''));
   const s = SESSION_SEED + i * 137;
+  const booked = seededRand(s, 22, 32);
+  const shown  = Math.round(booked * (seededRand(s+1, 78, 88) / 100));
   return {
-    appts_booked: seededRand(s, 14, 28),
-    appts_shown:  seededRand(s+1, 10, 22),
-    leads:        seededRand(s+2, 28, 65),
-    spend:        seededRand(s+3, 900, 1800),
-    impressions:  seededRand(s+4, 18000, 72000),
-    clicks:       seededRand(s+5, 380, 1400),
+    appts_booked: booked,
+    appts_shown:  shown,
+    leads:        seededRand(s+2, 45, 85),
+    spend:        seededRand(s+3, 1100, 2200),
+    impressions:  seededRand(s+4, 38000, 95000),
+    clicks:       seededRand(s+5, 680, 1800),
   };
 }
 
@@ -793,7 +795,8 @@ function loadDemo(role) {
   IS_DEMO = true;
   IS_ADMIN = (role === 'admin');
   CURRENT_CLIENT = IS_ADMIN ? null : DEMO_CLIENTS[0];
-  document.getElementById('topbar-user').textContent = IS_ADMIN ? 'admin@thehammerlist.com' : 'steven@concretepluseastcoast.org';
+  const guestEmails = ['contractor@phoenixconcrete.com','owner@nashvilleHVAC.com','info@denverdecking.com','contact@scottsdaleturfing.com','hello@charlottekitchens.com'];
+  document.getElementById('topbar-user').textContent = IS_ADMIN ? 'admin@thehammerlist.com' : guestEmails[seededRand(SESSION_SEED, 0, guestEmails.length-1)];
   document.getElementById('demo-badge').style.display = 'inline-block';
   showDashboard();
 }
