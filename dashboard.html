@@ -604,36 +604,68 @@ let IS_DEMO = false;
 let charts = {};
 
 // ═══════════════════════════════════════════════
-// DEMO DATA
+// GUEST / DEMO DATA — anonymized fake clients
 // ═══════════════════════════════════════════════
-const DEMO_CLIENTS = [
-  { id: 'd1', name: 'Concrete Plus Eastcoast', trade: 'Concrete', city: 'Jacksonville, FL', email: 'steven@concretepluseastcoast.org', retainer_amount: 2000, avg_job_value: 8500, is_active: true, meta_ad_account_id: 'act_26999634576294929' },
-  { id: 'd2', name: 'JP Air Dr LLC', trade: 'HVAC', city: 'Louisiana', email: 'robin@jpairdr.com', retainer_amount: 2500, avg_job_value: 6000, is_active: true },
-  { id: 'd3', name: 'The Best Landscape', trade: 'Turfing', city: 'Las Vegas', email: 'ricardo@thebestlandscape.com', retainer_amount: 2000, avg_job_value: 12000, is_active: true },
-  { id: 'd4', name: 'Lasting Decks', trade: 'Decking', city: 'Missoula', email: 'info@lastingdecks.com', retainer_amount: 2000, avg_job_value: 15000, is_active: true },
-  { id: 'd5', name: 'Houston Area Concrete', trade: 'Concrete', city: 'Houston', email: 'info@houstonareaconcrete.com', retainer_amount: 2000, avg_job_value: 9000, is_active: true },
+
+// Seed-based random so numbers are consistent per session but vary between visits
+const SESSION_SEED = Math.floor(Date.now() / 3600000); // changes every hour
+function seededRand(seed, min, max) {
+  const x = Math.sin(seed) * 10000;
+  return Math.floor((x - Math.floor(x)) * (max - min + 1)) + min;
+}
+
+const GUEST_CLIENTS = [
+  { id: 'g1',  trade: 'Concrete',          city: 'Phoenix, AZ',       region: 'Southwest' },
+  { id: 'g2',  trade: 'HVAC',              city: 'Nashville, TN',     region: 'Southeast' },
+  { id: 'g3',  trade: 'Decking',           city: 'Denver, CO',        region: 'Mountain' },
+  { id: 'g4',  trade: 'Turfing',           city: 'Scottsdale, AZ',    region: 'Southwest' },
+  { id: 'g5',  trade: 'Kitchen & Bath',    city: 'Charlotte, NC',     region: 'Southeast' },
+  { id: 'g6',  trade: 'Roofing',           city: 'Columbus, OH',      region: 'Midwest' },
+  { id: 'g7',  trade: 'Cabinet Refinishing', city: 'Portland, OR',    region: 'Northwest' },
+  { id: 'g8',  trade: 'Concrete',          city: 'Dallas, TX',        region: 'South' },
+  { id: 'g9',  trade: 'HVAC',              city: 'Minneapolis, MN',   region: 'Midwest' },
+  { id: 'g10', trade: 'Decking',           city: 'Boise, ID',         region: 'Northwest' },
+  { id: 'g11', trade: 'Turfing',           city: 'Sacramento, CA',    region: 'West' },
+  { id: 'g12', trade: 'Basement Remodel',  city: 'Pittsburgh, PA',    region: 'Northeast' },
+  { id: 'g13', trade: 'Roofing',           city: 'Kansas City, MO',   region: 'Midwest' },
+  { id: 'g14', trade: 'Kitchen & Bath',    city: 'Tampa, FL',         region: 'Southeast' },
+  { id: 'g15', trade: 'Concrete',          city: 'Raleigh, NC',       region: 'Southeast' },
+  { id: 'g16', trade: 'HVAC',              city: 'Salt Lake City, UT', region: 'Mountain' },
+  { id: 'g17', trade: 'Cabinet Refinishing', city: 'Austin, TX',      region: 'South' },
+  { id: 'g18', trade: 'Decking',           city: 'Spokane, WA',       region: 'Northwest' },
+  { id: 'g19', trade: 'Turfing',           city: 'Albuquerque, NM',   region: 'Southwest' },
+  { id: 'g20', trade: 'Basement Remodel',  city: 'Indianapolis, IN',  region: 'Midwest' },
 ];
 
-const DEMO_METRICS = {
-  d1: { appts_booked: 18, appts_shown: 14, leads: 42, ad_spend: 1200, impressions: 38000, clicks: 890 },
-  d2: { appts_booked: 12, appts_shown: 9, leads: 28, ad_spend: 900, impressions: 22000, clicks: 540 },
-  d3: { appts_booked: 21, appts_shown: 17, leads: 55, ad_spend: 1400, impressions: 61000, clicks: 1200 },
-  d4: { appts_booked: 15, appts_shown: 11, leads: 38, ad_spend: 1100, impressions: 29000, clicks: 670 },
-  d5: { appts_booked: 19, appts_shown: 15, leads: 47, ad_spend: 1300, impressions: 44000, clicks: 980 },
-};
+function getGuestMetrics(id) {
+  const i = parseInt(id.replace('g',''));
+  const s = SESSION_SEED + i * 137;
+  return {
+    appts_booked: seededRand(s, 14, 28),
+    appts_shown:  seededRand(s+1, 10, 22),
+    leads:        seededRand(s+2, 28, 65),
+    spend:        seededRand(s+3, 900, 1800),
+    impressions:  seededRand(s+4, 18000, 72000),
+    clicks:       seededRand(s+5, 380, 1400),
+  };
+}
+
+// For demo admin view — use guest clients with metrics
+const DEMO_CLIENTS = GUEST_CLIENTS;
+const DEMO_METRICS = Object.fromEntries(GUEST_CLIENTS.map(c => [c.id, getGuestMetrics(c.id)]));
 
 const DEMO_APPTS = [
-  { contact_name: 'Mike Rodriguez', start_time: new Date(Date.now()-86400000).toISOString(), status: 'confirmed' },
-  { contact_name: 'Sarah Johnson', start_time: new Date(Date.now()-172800000).toISOString(), status: 'attended' },
-  { contact_name: 'Tom Davis', start_time: new Date(Date.now()-259200000).toISOString(), status: 'confirmed' },
-  { contact_name: 'Lisa Chen', start_time: new Date(Date.now()+86400000).toISOString(), status: 'confirmed' },
-  { contact_name: 'James Wilson', start_time: new Date(Date.now()+172800000).toISOString(), status: 'confirmed' },
+  { contact_name: 'M. Rodriguez', start_time: new Date(Date.now()-86400000).toISOString(), status: 'confirmed' },
+  { contact_name: 'S. Johnson', start_time: new Date(Date.now()-172800000).toISOString(), status: 'attended' },
+  { contact_name: 'T. Davis', start_time: new Date(Date.now()-259200000).toISOString(), status: 'confirmed' },
+  { contact_name: 'L. Chen', start_time: new Date(Date.now()+86400000).toISOString(), status: 'confirmed' },
+  { contact_name: 'J. Wilson', start_time: new Date(Date.now()+172800000).toISOString(), status: 'confirmed' },
 ];
 
 const DEMO_JOBS = [
-  { client_name: 'Rodriguez', description: 'Stamped concrete driveway', job_value: 9200, closed_date: '2026-05-28' },
-  { client_name: 'Davis', description: 'Concrete patio + walkway', job_value: 7800, closed_date: '2026-05-22' },
-  { client_name: 'Chen', description: 'Decorative pool deck', job_value: 14500, closed_date: '2026-05-15' },
+  { client_name: 'M. Rodriguez', description: 'Stamped concrete driveway', job_value: 9200, closed_date: '2026-05-28' },
+  { client_name: 'T. Davis', description: 'Concrete patio + walkway', job_value: 7800, closed_date: '2026-05-22' },
+  { client_name: 'L. Chen', description: 'Decorative pool deck', job_value: 14500, closed_date: '2026-05-15' },
 ];
 
 // ═══════════════════════════════════════════════
@@ -734,8 +766,8 @@ async function loadOverview() {
   let client, metrics, appts;
 
   if (IS_DEMO) {
-    client = DEMO_CLIENTS[0];
-    metrics = DEMO_METRICS['d1'];
+    client = CURRENT_CLIENT || GUEST_CLIENTS[0];
+    metrics = getGuestMetrics(client.id);
     appts = DEMO_APPTS;
   } else {
     client = CURRENT_CLIENT;
@@ -753,7 +785,7 @@ async function loadOverview() {
   }
 
   // Header
-  document.getElementById('overview-title').textContent = client.name;
+  document.getElementById('overview-title').textContent = IS_DEMO ? `${client.trade} Contractor` : client.name;
   document.getElementById('overview-sub').textContent = `${client.trade} · ${client.city}`;
 
   // Ticker
@@ -1037,8 +1069,9 @@ async function loadAdminClients() {
     <thead><tr><th>Client</th><th>Trade</th><th>City</th><th>Appts</th><th>Meta Leads</th><th>Spend</th><th>Status</th></tr></thead>
     <tbody>${clients.map(c => {
       const m = c.metrics || {};
+      const displayName = IS_DEMO ? `${c.trade} Contractor` : c.name;
       return `<tr class="client-row" onclick="drillClient('${c.id}')">
-        <td style="font-weight:500">${c.name}</td>
+        <td style="font-weight:500">${displayName}</td>
         <td><span class="badge badge-blue">${c.trade}</span></td>
         <td style="color:var(--text2);font-size:12px">${c.city}</td>
         <td style="font-family:var(--mono)">${m.appts_booked || 0}</td>
@@ -1052,7 +1085,8 @@ async function loadAdminClients() {
 
 async function drillClient(clientId) {
   if (IS_DEMO) {
-    CURRENT_CLIENT = DEMO_CLIENTS.find(c => c.id === clientId);
+    const gc = GUEST_CLIENTS.find(c => c.id === clientId);
+    CURRENT_CLIENT = gc ? { ...gc, metrics: getGuestMetrics(gc.id) } : DEMO_CLIENTS[0];
   } else {
     const { data } = await sb.from('clients').select('*').eq('id', clientId).single();
     CURRENT_CLIENT = data;
@@ -1085,13 +1119,21 @@ async function loadAdminOverview() {
   const totSpend = allMetrics.reduce((s, m) => s + (m.spend || 0), 0);
   const totImpr = allMetrics.reduce((s, m) => s + (m.impressions || 0), 0);
 
+  // For guest/demo, show impressive all-time aggregate numbers
+  const dispAppts = IS_DEMO ? (totAppts + seededRand(SESSION_SEED+99, 600, 900)) : totAppts;
+  const dispLeads = IS_DEMO ? (totLeads + seededRand(SESSION_SEED+88, 800, 1400)) : totLeads;
+  const dispSpend = IS_DEMO ? (totSpend + seededRand(SESSION_SEED+77, 18000, 32000)) : totSpend;
+  const dispImpr  = IS_DEMO ? (totImpr + seededRand(SESSION_SEED+66, 900000, 1800000)) : totImpr;
+  const dispMRR   = IS_DEMO ? seededRand(SESSION_SEED+55, 38000, 52000) : clients.reduce((s,c) => s+(c.retainer_amount||0), 0);
+  const dispClients = IS_DEMO ? (clients.length + seededRand(SESSION_SEED+44, 14, 22)) : clients.length;
+
   document.getElementById('admin-stat-grid').innerHTML = `
-    <div class="stat-card"><div class="stat-label">Active Clients</div><div class="stat-val copper">${clients.length}</div></div>
-    <div class="stat-card"><div class="stat-label">Total Appts</div><div class="stat-val">${totAppts}</div><div class="stat-change">This month</div></div>
-    <div class="stat-card"><div class="stat-label">Meta Leads</div><div class="stat-val blue">${totLeads}</div></div>
-    <div class="stat-card"><div class="stat-label">Total Ad Spend</div><div class="stat-val">$${totSpend.toLocaleString()}</div></div>
-    <div class="stat-card"><div class="stat-label">Impressions</div><div class="stat-val">${fmtNum(totImpr)}</div></div>
-    <div class="stat-card"><div class="stat-label">MRR</div><div class="stat-val green">$${clients.reduce((s,c) => s+(c.retainer_amount||0), 0).toLocaleString()}</div></div>
+    <div class="stat-card"><div class="stat-label">Active Clients</div><div class="stat-val copper">${dispClients}</div></div>
+    <div class="stat-card"><div class="stat-label">Total Appts</div><div class="stat-val">${dispAppts.toLocaleString()}</div><div class="stat-change">All time</div></div>
+    <div class="stat-card"><div class="stat-label">Meta Leads</div><div class="stat-val blue">${dispLeads.toLocaleString()}</div></div>
+    <div class="stat-card"><div class="stat-label">Total Ad Spend</div><div class="stat-val">$${dispSpend.toLocaleString()}</div></div>
+    <div class="stat-card"><div class="stat-label">Impressions</div><div class="stat-val">${fmtNum(dispImpr)}</div></div>
+    <div class="stat-card"><div class="stat-label">MRR</div><div class="stat-val green">$${dispMRR.toLocaleString()}</div></div>
   `;
 
   // Chart
