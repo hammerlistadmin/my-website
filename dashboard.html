@@ -705,18 +705,21 @@ const DEMO_APPTS = genDemoAppts();
 
 function genDemoJobs() {
   const jobData = [
-    { name: 'Marcus Rivera',     desc: 'Stamped concrete driveway',        value: 9200  },
-    { name: 'Derek Thornton',    desc: 'Concrete patio + retaining wall',  value: 11400 },
-    { name: 'Carlos Mendez',     desc: 'Full driveway replacement',        value: 8700  },
-    { name: 'Jamal Brooks',      desc: 'Decorative pool deck',             value: 14500 },
-    { name: 'Raj Patel',         desc: 'Concrete flatwork + walkway',      value: 6900  },
-    { name: 'Tyrone Washington', desc: 'Exposed aggregate driveway',       value: 10200 },
-    { name: 'Mike Castellano',   desc: 'Stamped patio + steps',            value: 12800 },
-    { name: 'Andre Williams',    desc: 'Concrete driveway + apron',        value: 7600  },
-    { name: 'Brett Sullivan',    desc: 'Backyard patio slab',              value: 5400  },
-    { name: 'Dmitri Petrov',     desc: 'Commercial parking lot section',   value: 22000 },
-    { name: 'Omar Khalid',       desc: 'Decorative concrete porch',        value: 8100  },
-    { name: 'Jason Morales',     desc: 'Driveway widening + curb',         value: 9800  },
+    { name: 'Marcus Rivera',     desc: 'Stamped concrete driveway',        value: 14800 },
+    { name: 'Derek Thornton',    desc: 'Concrete patio + retaining wall',  value: 18200 },
+    { name: 'Carlos Mendez',     desc: 'Full driveway replacement',        value: 12400 },
+    { name: 'Jamal Brooks',      desc: 'Decorative pool deck',             value: 22500 },
+    { name: 'Raj Patel',         desc: 'Concrete flatwork + walkway',      value: 9800  },
+    { name: 'Tyrone Washington', desc: 'Exposed aggregate driveway',       value: 16400 },
+    { name: 'Mike Castellano',   desc: 'Stamped patio + steps',            value: 19200 },
+    { name: 'Andre Williams',    desc: 'Concrete driveway + apron',        value: 11600 },
+    { name: 'Brett Sullivan',    desc: 'Backyard patio + outdoor kitchen', value: 28500 },
+    { name: 'Dmitri Petrov',     desc: 'Commercial parking lot section',   value: 38000 },
+    { name: 'Omar Khalid',       desc: 'Decorative concrete porch + steps',value: 13200 },
+    { name: 'Jason Morales',     desc: 'Full property flatwork package',   value: 24800 },
+    { name: 'Shane Kowalski',    desc: 'Stamped driveway + patio combo',   value: 17600 },
+    { name: 'Kwame Osei',        desc: 'Commercial sidewalk replacement',  value: 31000 },
+    { name: 'Luis Fuentes',      desc: 'Driveway + retaining wall',        value: 15900 },
   ];
   const months = ['2026-02','2026-03','2026-04','2026-05','2026-06'];
   return jobData.map((j, i) => {
@@ -974,7 +977,7 @@ async function loadAppointments() {
   let appts;
 
   if (IS_DEMO) {
-    appts = [...DEMO_APPTS, ...DEMO_APPTS.map(a => ({...a, contact_name: a.contact_name + ' (2)', start_time: new Date(new Date(a.start_time).getTime() - 7*86400000).toISOString()}))];
+    appts = DEMO_APPTS;
   } else {
     const { data } = await sb.from('appointments').select('*').eq('client_id', CURRENT_CLIENT?.id).order('start_time', { ascending: false });
     appts = data || [];
@@ -1269,6 +1272,24 @@ document.getElementById('pass-input').addEventListener('keydown', e => e.key ===
 
 // Init
 checkSession();
+
+// Auto-refresh demo data every hour (SESSION_SEED changes hourly)
+// For real users, re-sync every 30 min
+setInterval(() => {
+  if (IS_DEMO) {
+    // Regenerate demo data with new seed
+    location.reload();
+  } else if (CURRENT_USER) {
+    // Silently reload current view
+    const activeView = document.querySelector('.view.active');
+    if (activeView) {
+      const id = activeView.id.replace('view-', '');
+      if (id === 'overview') loadOverview();
+      if (id === 'admin-clients') loadAdminClients();
+      if (id === 'admin-overview') loadAdminOverview();
+    }
+  }
+}, 30 * 60 * 1000); // every 30 minutes
 </script>
 </body>
 </html>
