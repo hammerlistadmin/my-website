@@ -733,7 +733,7 @@ async function loadOverview() {
     const month = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
 
     const [mRes, aRes] = await Promise.all([
-      sb.from('metrics').select('*').eq('client_id', client.id).eq('month', month).single(),
+      sb.from('metrics').select('*').eq('client_id', client.id).order('month', { ascending: false }).limit(1).single(),
       sb.from('appointments').select('*').eq('client_id', client.id).order('start_time', { ascending: false }).limit(10)
     ]);
     metrics = mRes.data || {};
@@ -986,7 +986,7 @@ async function loadAdminClients() {
     const now = new Date();
     const month = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
     const { data: cData } = await sb.from('clients').select('*').eq('is_active', true);
-    const { data: mData } = await sb.from('metrics').select('*').eq('month', month);
+    const { data: mData } = await sb.from('metrics').select('*');
     clients = (cData || []).map(c => ({
       ...c,
       metrics: mData?.find(m => m.client_id === c.id) || {}
