@@ -706,35 +706,40 @@ function genDemoAppts() {
 const DEMO_APPTS = genDemoAppts();
 
 function genDemoJobs() {
+  // All jobs in the past only — spread across last 5 months
+  // Each month gets 2-3 jobs totaling $60-80k per month
   const jobData = [
-    { name: 'Marcus Rivera',     desc: 'Stamped concrete driveway',        value: 14800 },
-    { name: 'Derek Thornton',    desc: 'Concrete patio + retaining wall',  value: 18200 },
-    { name: 'Carlos Mendez',     desc: 'Full driveway replacement',        value: 12400 },
-    { name: 'Jamal Brooks',      desc: 'Decorative pool deck',             value: 22500 },
-    { name: 'Raj Patel',         desc: 'Concrete flatwork + walkway',      value: 9800  },
-    { name: 'Tyrone Washington', desc: 'Exposed aggregate driveway',       value: 16400 },
-    { name: 'Mike Castellano',   desc: 'Stamped patio + steps',            value: 19200 },
-    { name: 'Andre Williams',    desc: 'Concrete driveway + apron',        value: 11600 },
-    { name: 'Brett Sullivan',    desc: 'Backyard patio + outdoor kitchen', value: 28500 },
-    { name: 'Dmitri Petrov',     desc: 'Commercial parking lot section',   value: 38000 },
-    { name: 'Omar Khalid',       desc: 'Decorative concrete porch + steps',value: 13200 },
-    { name: 'Jason Morales',     desc: 'Full property flatwork package',   value: 24800 },
-    { name: 'Shane Kowalski',    desc: 'Stamped driveway + patio combo',   value: 17600 },
-    { name: 'Kwame Osei',        desc: 'Commercial sidewalk replacement',  value: 31000 },
-    { name: 'Luis Fuentes',      desc: 'Driveway + retaining wall',        value: 15900 },
+    // June 2026 (only days 1 and before today = Jun 1, so just today)
+    { name: 'Tyrone Washington', desc: 'Exposed aggregate driveway',        value: 16400, mo: '2026-06', day: 1 },
+    // May 2026
+    { name: 'Dmitri Petrov',     desc: 'Commercial parking lot section',    value: 38000, mo: '2026-05', day: 22 },
+    { name: 'Brett Sullivan',    desc: 'Backyard patio + outdoor kitchen',  value: 28500, mo: '2026-05', day: 14 },
+    { name: 'Mike Castellano',   desc: 'Stamped patio + steps',             value: 19200, mo: '2026-05', day: 7  },
+    // April 2026
+    { name: 'Kwame Osei',        desc: 'Commercial sidewalk replacement',   value: 31000, mo: '2026-04', day: 25 },
+    { name: 'Jason Morales',     desc: 'Full property flatwork package',    value: 24800, mo: '2026-04', day: 18 },
+    { name: 'Carlos Mendez',     desc: 'Full driveway replacement',         value: 12400, mo: '2026-04', day: 9  },
+    // March 2026
+    { name: 'Jamal Brooks',      desc: 'Decorative pool deck',              value: 22500, mo: '2026-03', day: 28 },
+    { name: 'Shane Kowalski',    desc: 'Stamped driveway + patio combo',    value: 17600, mo: '2026-03', day: 19 },
+    { name: 'Derek Thornton',    desc: 'Concrete patio + retaining wall',   value: 18200, mo: '2026-03', day: 11 },
+    { name: 'Luis Fuentes',      desc: 'Driveway + retaining wall',         value: 15900, mo: '2026-03', day: 4  },
+    // February 2026
+    { name: 'Marcus Rivera',     desc: 'Stamped concrete driveway',         value: 14800, mo: '2026-02', day: 24 },
+    { name: 'Omar Khalid',       desc: 'Decorative concrete porch + steps', value: 13200, mo: '2026-02', day: 17 },
+    { name: 'Andre Williams',    desc: 'Concrete driveway + apron',         value: 11600, mo: '2026-02', day: 8  },
+    { name: 'Raj Patel',         desc: 'Concrete flatwork + walkway',       value: 9800,  mo: '2026-02', day: 3  },
   ];
-  const months = ['2026-02','2026-03','2026-04','2026-05','2026-06'];
   return jobData.map((j, i) => {
-    const mo = months[seededRand(SESSION_SEED + i * 19, 0, months.length-1)];
-    const day = String(seededRand(SESSION_SEED + i * 37, 1, 27)).padStart(2,'0');
-    const variance = seededRand(SESSION_SEED + i * 53, -500, 800);
+    const variance = seededRand(SESSION_SEED + i * 53, -400, 700);
+    const day = String(j.day).padStart(2,'0');
     return {
       client_name: j.name,
       description: j.desc,
       job_value: j.value + variance,
-      closed_date: `${mo}-${day}`,
+      closed_date: `${j.mo}-${day}`,
     };
-  }).sort((a, b) => b.closed_date.localeCompare(a.closed_date));
+  });
 }
 const DEMO_JOBS = genDemoJobs();
 
