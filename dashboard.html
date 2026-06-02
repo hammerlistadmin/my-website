@@ -3,922 +3,1127 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>The Hammer List — Partner Dashboard</title>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<title>The Hammer List — Client Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-:root{
---bg:#050505;--bg2:#0a0a0a;--card:#101010;--card2:#141414;
---text:#f5f4ee;--muted:#b0ad9e;--dim:#8a8778;
---border:#1a1a1a;--border2:#242424;--accent:#c4713b;--accent2:#e8945a;
---green:#48bb78;--red:#e05252;--amber:#f59e42;
---glow:rgba(196,113,59,.08);
---font:'Outfit',sans-serif;--mono:'JetBrains Mono',monospace;
+:root {
+  --bg: #0a0a0a;
+  --bg2: #111111;
+  --bg3: #1a1a1a;
+  --border: #222222;
+  --border2: #2a2a2a;
+  --copper: #c4713b;
+  --copper2: #e8854a;
+  --text: #f0ede8;
+  --text2: #888880;
+  --text3: #555550;
+  --green: #4ade80;
+  --red: #f87171;
+  --yellow: #fbbf24;
+  --blue: #60a5fa;
+  --radius: 8px;
+  --font: 'Outfit', sans-serif;
+  --mono: 'JetBrains Mono', monospace;
 }
-html{scroll-behavior:smooth}
-body{background:var(--bg);color:var(--text);font-family:var(--font);-webkit-font-smoothing:antialiased;min-height:100vh}
-.mono{font-family:var(--mono)}
-.logo-mark{height:34px;width:auto;display:block}
-.logo-mark svg{height:100%;width:auto}
-.grain{position:fixed;inset:0;pointer-events:none;z-index:9998;opacity:.025;mix-blend-mode:overlay;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.65' numOctaves='5' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
-.orb{position:fixed;border-radius:50%;filter:blur(90px);pointer-events:none;z-index:0;opacity:.35}
-.orb-1{width:480px;height:480px;background:rgba(196,113,59,.06);top:-10%;right:-8%}
-.orb-2{width:520px;height:520px;background:rgba(100,60,30,.04);bottom:-15%;left:-12%}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; overflow-x: hidden; }
 
-/* ===== LOGIN ===== */
-#login{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:24px;background:radial-gradient(ellipse at 50% 30%,#0d0b09,#050505 70%)}
-.login-card{background:var(--card);border:1px solid var(--border);border-radius:24px;padding:48px 40px;max-width:420px;width:100%;text-align:center;position:relative;z-index:2}
-.login-logo{height:54px;margin:0 auto 28px;display:flex;justify-content:center}
-.login-logo svg{height:100%}
-.login-card h1{font-size:24px;font-weight:700;letter-spacing:-.5px;margin-bottom:6px}
-.login-card p.sub{color:var(--dim);font-size:14px;margin-bottom:32px}
-.field{text-align:left;margin-bottom:18px}
-.field label{font-family:var(--mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:8px}
-.field input{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:15px 16px;border-radius:12px;font-size:15px;font-family:var(--font);outline:none;transition:border-color .3s}
-.field input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--glow)}
-.login-btn{width:100%;padding:15px;border-radius:12px;background:var(--accent);color:#fff;border:none;font-size:15px;font-weight:600;cursor:pointer;font-family:var(--font);transition:background .3s;margin-top:6px;position:relative}
-.login-btn:hover{background:var(--accent2)}
-.login-btn.loading{pointer-events:none;opacity:.7}
-.demo-row{margin-top:24px;padding-top:24px;border-top:1px solid var(--border)}
-.demo-row p{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;margin-bottom:12px}
-.demo-btns{display:flex;gap:10px}
-.demo-btns button{flex:1;background:var(--card2);border:1px solid var(--border2);color:var(--muted);padding:11px;border-radius:10px;font-size:12px;font-weight:500;cursor:pointer;font-family:var(--font);transition:all .3s}
-.demo-btns button:hover{border-color:var(--accent);color:var(--text)}
-.login-err{color:var(--red);font-size:13px;margin-top:14px;min-height:18px}
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 
-/* ===== APP SHELL ===== */
-.app{display:none;position:relative;z-index:1}
-.app.active{display:block}
-.topbar{position:sticky;top:0;z-index:50;background:rgba(5,5,5,.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:14px 32px;display:flex;align-items:center;justify-content:space-between;gap:16px}
-.topbar-left{display:flex;align-items:center;gap:18px;min-width:0}
-.topbar-left .logo-mark{flex-shrink:0}
-.tb-divider{width:1px;height:26px;background:var(--border2)}
-.tb-client{min-width:0}
-.tb-client .name{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.tb-client .meta{font-family:var(--mono);font-size:10px;letter-spacing:1px;color:var(--accent);text-transform:uppercase;margin-top:2px}
-.topbar-right{display:flex;align-items:center;gap:14px;flex-shrink:0}
-.badge{font-family:var(--mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;padding:6px 12px;border-radius:100px;border:1px solid var(--border2);color:var(--muted)}
-.badge.admin{color:var(--accent);border-color:rgba(196,113,59,.3);background:var(--glow)}
-.badge.demo{color:var(--amber);border-color:rgba(245,158,66,.3);background:rgba(245,158,66,.06)}
-.live-pill{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:10px;letter-spacing:1px;color:var(--green)}
-.live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-.logout{background:none;border:1px solid var(--border2);color:var(--muted);padding:8px 16px;border-radius:10px;font-size:12px;font-weight:500;cursor:pointer;font-family:var(--font);transition:all .3s}
-.logout:hover{border-color:var(--accent);color:var(--text)}
-.wrap{max-width:1240px;margin:0 auto;padding:32px}
-
-/* ===== TICKER ===== */
-.ticker{background:var(--card);border-bottom:1px solid var(--border);overflow:hidden;white-space:nowrap;position:relative}
-.ticker-track{display:inline-flex;gap:48px;padding:11px 0;animation:scroll-left 38s linear infinite;will-change:transform}
-.ticker:hover .ticker-track{animation-play-state:paused}
-.ticker-item{display:inline-flex;align-items:center;gap:9px;font-size:12px;color:var(--muted)}
-.ticker-item .tdot{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0}
-.ticker-item b{color:var(--text);font-weight:600}
-@keyframes scroll-left{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-
-/* ===== SECTION HEADINGS ===== */
-.sec-label{font-family:var(--mono);font-size:10px;letter-spacing:4px;color:var(--accent);text-transform:uppercase;margin-bottom:16px;display:flex;align-items:center;gap:12px}
-.sec-label::before{content:'';width:24px;height:1px;background:var(--accent)}
-.row{display:grid;gap:18px;margin-bottom:24px}
-.toggle-group{display:inline-flex;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:4px;gap:2px}
-.toggle-group button{background:none;border:none;color:var(--dim);padding:8px 18px;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);transition:all .3s}
-.toggle-group button.on{background:var(--accent);color:#fff}
-
-/* ===== ROI HERO ===== */
-.roi-hero{background:linear-gradient(135deg,#13100c,#0c0a08);border:1px solid rgba(196,113,59,.22);border-radius:24px;padding:42px 40px;position:relative;overflow:hidden;margin-bottom:24px}
-.roi-hero::after{content:'';position:absolute;top:-50%;right:-10%;width:60%;height:200%;background:radial-gradient(circle,var(--glow),transparent 70%)}
-.roi-hero .lbl{font-family:var(--mono);font-size:11px;letter-spacing:3px;color:var(--accent);text-transform:uppercase;margin-bottom:16px;position:relative}
-.roi-big{font-family:var(--mono);font-size:clamp(56px,10vw,108px);font-weight:800;line-height:.9;letter-spacing:-3px;position:relative}
-.roi-big span{color:var(--accent)}
-.roi-sub{color:var(--muted);font-size:16px;margin-top:18px;font-weight:300;position:relative;line-height:1.6}
-.roi-sub b{color:var(--text);font-weight:600}
-
-/* ===== KPI CARDS ===== */
-.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-bottom:24px}
-.kpi{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:26px 24px;transition:all .4s;position:relative;overflow:hidden}
-.kpi:hover{border-color:var(--border2);transform:translateY(-3px)}
-.kpi .k-lbl{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;margin-bottom:14px}
-.kpi .k-val{font-family:var(--mono);font-size:38px;font-weight:800;line-height:1;letter-spacing:-1px}
-.kpi .k-foot{font-size:12px;color:var(--muted);margin-top:12px;display:flex;align-items:center;gap:6px}
-.k-trend{font-family:var(--mono);font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px}
-.k-trend.up{color:var(--green);background:rgba(72,187,120,.1)}
-.k-trend.down{color:var(--red);background:rgba(224,82,82,.1)}
-.k-trend.flat{color:var(--dim);background:rgba(255,255,255,.04)}
-
-/* ===== PANELS ===== */
-.panel{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:28px;margin-bottom:24px}
-.panel-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:22px;flex-wrap:wrap}
-.panel-head h3{font-size:17px;font-weight:700;letter-spacing:-.3px}
-.panel-head .ph-sub{font-size:13px;color:var(--dim);margin-top:3px}
-.grid-2{display:grid;grid-template-columns:1.6fr 1fr;gap:24px}
-.grid-2-even{display:grid;grid-template-columns:1fr 1fr;gap:24px}
-
-/* GUARANTEE */
-.gtrack{margin-top:4px}
-.gtrack-top{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:14px}
-.gtrack-num{font-family:var(--mono);font-size:30px;font-weight:800}
-.gtrack-num span{color:var(--accent)}
-.gtrack-days{font-family:var(--mono);font-size:12px;color:var(--muted)}
-.gbar{height:14px;background:var(--bg);border-radius:100px;overflow:hidden;border:1px solid var(--border)}
-.gbar-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:100px;transition:width 1s cubic-bezier(.4,0,.2,1);position:relative}
-.gtrack-met{margin-top:14px;font-size:13px;color:var(--green);font-weight:600;display:none}
-.gtrack-met.show{display:block}
-
-/* CALENDAR */
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
-.cal-dow{font-family:var(--mono);font-size:9px;letter-spacing:1px;color:var(--dim);text-align:center;text-transform:uppercase;padding-bottom:6px}
-.cal-day{aspect-ratio:1;border-radius:9px;background:var(--bg);border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px;color:var(--dim);position:relative}
-.cal-day.has{background:rgba(196,113,59,.08);border-color:rgba(196,113,59,.3);color:var(--text);font-weight:600;cursor:pointer}
-.cal-day.has .cnt{position:absolute;top:4px;right:5px;font-family:var(--mono);font-size:8px;color:var(--accent);font-weight:700}
-.cal-day.today{outline:1.5px solid var(--accent);outline-offset:-1px}
-.cal-day.empty{background:none;border:none}
-
-/* CLOSED JOBS */
-.tbl{width:100%;border-collapse:collapse}
-.tbl th{font-family:var(--mono);font-size:9px;letter-spacing:1px;color:var(--dim);text-transform:uppercase;text-align:left;padding:10px 12px;border-bottom:1px solid var(--border)}
-.tbl td{padding:13px 12px;border-bottom:1px solid var(--border);font-size:14px;color:var(--muted)}
-.tbl td b{color:var(--text);font-weight:600}
-.tbl tr:last-child td{border-bottom:none}
-.add-job{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
-.add-job input{flex:1;min-width:120px;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:11px 13px;border-radius:10px;font-size:13px;font-family:var(--font);outline:none}
-.add-job input:focus{border-color:var(--accent)}
-.add-job button{background:var(--accent);color:#fff;border:none;padding:11px 20px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)}
-.add-job button:hover{background:var(--accent2)}
-
-/* COMPARISON */
-.cmp{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.cmp-side{border-radius:14px;padding:22px;border:1px solid var(--border)}
-.cmp-side.them{background:var(--bg)}
-.cmp-side.you{background:rgba(196,113,59,.05);border-color:rgba(196,113,59,.25)}
-.cmp-side .c-name{font-size:13px;font-weight:600;margin-bottom:6px}
-.cmp-side.them .c-name{color:var(--muted)}
-.cmp-side .c-cost{font-family:var(--mono);font-size:26px;font-weight:800;letter-spacing:-1px}
-.cmp-side.them .c-cost{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--red)}
-.cmp-side.you .c-cost{color:var(--accent)}
-.cmp-side .c-note{font-size:11px;color:var(--dim);margin-top:8px;line-height:1.5}
-
-/* CREATIVES */
-.crv-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-.crv{background:var(--bg);border:1px solid var(--border);border-radius:12px;overflow:hidden}
-.crv-thumb{aspect-ratio:1.6;background:linear-gradient(135deg,#1a1714,#0e0c0a);display:flex;align-items:center;justify-content:center;color:var(--dim);font-family:var(--mono);font-size:10px;letter-spacing:1px;border-bottom:1px solid var(--border);position:relative}
-.crv-thumb img{width:100%;height:100%;object-fit:cover}
-.crv-body{padding:12px 13px}
-.crv-body .cr-name{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.crv-status{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:9px;letter-spacing:1px;text-transform:uppercase;margin-top:7px}
-.crv-status.active{color:var(--green)}.crv-status.paused{color:var(--amber)}
-.crv-status .s-dot{width:6px;height:6px;border-radius:50%;background:currentColor}
-
-/* ADMIN */
-.adm-totals{display:grid;grid-template-columns:repeat(5,1fr);gap:18px;margin-bottom:24px}
-.adm-clients .tbl td{cursor:pointer}
-.adm-clients .tbl tr:hover td{background:var(--card2)}
-.health{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:12px;font-weight:700}
-.health-bar{width:46px;height:6px;border-radius:100px;background:var(--bg);overflow:hidden}
-.health-bar i{display:block;height:100%;border-radius:100px}
-.chip{font-family:var(--mono);font-size:9px;letter-spacing:1px;text-transform:uppercase;padding:4px 9px;border-radius:6px;font-weight:600}
-.chip.ok{color:var(--green);background:rgba(72,187,120,.1)}
-.chip.risk{color:var(--red);background:rgba(224,82,82,.12)}
-.chip.new{color:var(--accent);background:var(--glow)}
-.rank{font-family:var(--mono);font-size:13px;color:var(--dim);width:26px;display:inline-block}
-.rank.top{color:var(--accent);font-weight:700}
-.back-btn{background:none;border:1px solid var(--border2);color:var(--muted);padding:8px 16px;border-radius:10px;font-size:12px;font-weight:500;cursor:pointer;font-family:var(--font);margin-bottom:20px;display:none}
-.back-btn:hover{border-color:var(--accent);color:var(--text)}
-.back-btn.show{display:inline-block}
-
-/* MISC */
-.btn-ghost{background:none;border:1px solid var(--border2);color:var(--muted);padding:9px 16px;border-radius:10px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);transition:all .3s}
-.btn-ghost:hover{border-color:var(--accent);color:var(--text)}
-.note{font-size:12px;color:var(--dim);line-height:1.6}
-.chart-box{position:relative;height:280px}
-.mini-territory{aspect-ratio:1.7;background:var(--bg);border:1px solid var(--border);border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:20px}
-.mini-territory .zone{font-family:var(--mono);font-size:13px;color:var(--accent);letter-spacing:1px}
-.mini-territory .excl{font-size:12px;color:var(--muted)}
-.lock-ico{font-size:26px}
-
-/* LOADING STATE */
-.loading-overlay{position:fixed;inset:0;z-index:200;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px}
-.loading-overlay.hide{display:none}
-.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.loading-overlay p{font-family:var(--mono);font-size:11px;letter-spacing:2px;color:var(--dim);text-transform:uppercase}
-
-@media(max-width:900px){
-.grid-2,.grid-2-even{grid-template-columns:1fr}
-.kpi-grid{grid-template-columns:1fr 1fr}
-.adm-totals{grid-template-columns:1fr 1fr}
-.crv-grid{grid-template-columns:1fr 1fr}
-.cmp{grid-template-columns:1fr}
-.wrap{padding:20px}
-.topbar{padding:12px 18px}
-.roi-big{font-size:64px}
+/* ── LOGIN ── */
+#login-screen {
+  position: fixed; inset: 0; background: var(--bg);
+  display: flex; align-items: center; justify-content: center; z-index: 1000;
 }
-@media(max-width:560px){
-.kpi-grid,.adm-totals,.crv-grid{grid-template-columns:1fr}
-.tb-client .name{max-width:120px}
+.login-box {
+  width: 100%; max-width: 400px; padding: 0 24px;
+}
+.login-logo {
+  text-align: center; margin-bottom: 40px;
+}
+.login-logo .wordmark {
+  font-size: 11px; letter-spacing: 0.3em; color: var(--text2);
+  text-transform: uppercase; font-family: var(--mono);
+}
+.login-logo .hammer-icon {
+  font-size: 32px; display: block; margin-bottom: 8px;
+}
+.login-title {
+  font-size: 22px; font-weight: 600; margin-bottom: 4px; text-align: center;
+}
+.login-sub {
+  font-size: 13px; color: var(--text2); text-align: center; margin-bottom: 32px;
+}
+.form-group { margin-bottom: 16px; }
+.form-group label {
+  display: block; font-size: 11px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text2); margin-bottom: 6px;
+  font-family: var(--mono);
+}
+.form-group input {
+  width: 100%; background: var(--bg2); border: 1px solid var(--border2);
+  color: var(--text); padding: 12px 14px; border-radius: var(--radius);
+  font-family: var(--font); font-size: 14px; outline: none;
+  transition: border-color 0.2s;
+}
+.form-group input:focus { border-color: var(--copper); }
+.btn-login {
+  width: 100%; background: var(--copper); color: #fff; border: none;
+  padding: 13px; border-radius: var(--radius); font-size: 14px; font-weight: 600;
+  cursor: pointer; margin-top: 8px; transition: background 0.2s; font-family: var(--font);
+}
+.btn-login:hover { background: var(--copper2); }
+.login-error {
+  color: var(--red); font-size: 12px; text-align: center;
+  margin-top: 12px; display: none;
+}
+.demo-divider {
+  display: flex; align-items: center; gap: 12px; margin: 24px 0;
+}
+.demo-divider::before, .demo-divider::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+.demo-divider span { font-size: 11px; color: var(--text3); white-space: nowrap; }
+.demo-btns { display: flex; gap: 10px; }
+.btn-demo {
+  flex: 1; background: var(--bg2); border: 1px solid var(--border2);
+  color: var(--text2); padding: 11px; border-radius: var(--radius);
+  font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: var(--font);
+}
+.btn-demo:hover { border-color: var(--copper); color: var(--text); }
+
+/* ── DASHBOARD ── */
+#dashboard { display: none; min-height: 100vh; }
+
+/* ── TOPBAR ── */
+.topbar {
+  height: 52px; background: var(--bg); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 20px;
+  position: sticky; top: 0; z-index: 100;
+}
+.topbar-logo {
+  font-size: 11px; letter-spacing: 0.25em; font-family: var(--mono);
+  color: var(--copper); text-transform: uppercase; margin-right: auto;
+}
+.demo-badge {
+  background: rgba(251,191,36,0.15); color: var(--yellow);
+  border: 1px solid rgba(251,191,36,0.3); border-radius: 4px;
+  font-size: 10px; padding: 3px 8px; letter-spacing: 0.1em;
+  font-family: var(--mono); margin-right: 14px; display: none;
+}
+.topbar-user {
+  font-size: 12px; color: var(--text2); margin-right: 16px;
+  font-family: var(--mono);
+}
+.btn-logout {
+  background: none; border: 1px solid var(--border2); color: var(--text2);
+  padding: 6px 12px; border-radius: 6px; font-size: 11px; cursor: pointer;
+  transition: all 0.2s; font-family: var(--font);
+}
+.btn-logout:hover { border-color: var(--copper); color: var(--text); }
+
+/* ── LAYOUT ── */
+.layout { display: flex; }
+.sidebar {
+  width: 220px; min-height: calc(100vh - 52px); background: var(--bg);
+  border-right: 1px solid var(--border); padding: 20px 12px;
+  position: sticky; top: 52px; height: calc(100vh - 52px);
+  overflow-y: auto; flex-shrink: 0;
+}
+.sidebar-section { margin-bottom: 24px; }
+.sidebar-label {
+  font-size: 9px; letter-spacing: 0.2em; color: var(--text3);
+  text-transform: uppercase; font-family: var(--mono); padding: 0 8px;
+  margin-bottom: 6px;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 9px; padding: 8px 10px;
+  border-radius: 6px; color: var(--text2); cursor: pointer;
+  font-size: 13px; transition: all 0.15s; margin-bottom: 2px;
+}
+.nav-item:hover { background: var(--bg2); color: var(--text); }
+.nav-item.active { background: rgba(196,113,59,0.12); color: var(--copper); }
+.nav-item .icon { width: 16px; text-align: center; font-size: 14px; }
+.main { flex: 1; padding: 28px; overflow-x: hidden; }
+
+/* ── VIEWS ── */
+.view { display: none; }
+.view.active { display: block; }
+
+/* ── PAGE HEADER ── */
+.page-header { margin-bottom: 28px; }
+.page-title { font-size: 22px; font-weight: 600; }
+.page-sub { font-size: 13px; color: var(--text2); margin-top: 4px; }
+
+/* ── STAT CARDS ── */
+.stat-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 14px; margin-bottom: 24px;
+}
+.stat-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 18px;
+}
+.stat-label {
+  font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--text2); font-family: var(--mono); margin-bottom: 10px;
+}
+.stat-val {
+  font-size: 26px; font-weight: 700; font-family: var(--mono); line-height: 1;
+}
+.stat-val.green { color: var(--green); }
+.stat-val.copper { color: var(--copper); }
+.stat-val.blue { color: var(--blue); }
+.stat-change {
+  font-size: 11px; color: var(--text3); margin-top: 6px;
+}
+
+/* ── PANELS ── */
+.panel {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); margin-bottom: 20px;
+}
+.panel-header {
+  padding: 16px 20px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.panel-title { font-size: 13px; font-weight: 600; }
+.panel-body { padding: 20px; }
+
+/* ── TABLE ── */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th {
+  text-align: left; font-size: 10px; letter-spacing: 0.1em;
+  color: var(--text3); font-family: var(--mono); text-transform: uppercase;
+  padding: 0 12px 12px; font-weight: 500;
+}
+td { padding: 11px 12px; border-top: 1px solid var(--border); }
+tr:hover td { background: rgba(255,255,255,0.02); }
+.badge {
+  display: inline-block; padding: 3px 8px; border-radius: 4px;
+  font-size: 10px; font-family: var(--mono); letter-spacing: 0.05em;
+}
+.badge-green { background: rgba(74,222,128,0.1); color: var(--green); }
+.badge-yellow { background: rgba(251,191,36,0.1); color: var(--yellow); }
+.badge-red { background: rgba(248,113,113,0.1); color: var(--red); }
+.badge-blue { background: rgba(96,165,250,0.1); color: var(--blue); }
+.badge-gray { background: rgba(255,255,255,0.05); color: var(--text2); }
+
+/* ── CHART ── */
+.chart-wrap { position: relative; height: 220px; }
+
+/* ── ADMIN CLIENT TABLE ── */
+.client-row { cursor: pointer; }
+.client-row:hover td { background: rgba(196,113,59,0.05); }
+
+/* ── PROGRESS BAR ── */
+.progress-bar {
+  height: 4px; background: var(--border); border-radius: 2px; margin-top: 8px;
+}
+.progress-fill {
+  height: 100%; border-radius: 2px; background: var(--copper);
+  transition: width 0.5s;
+}
+
+/* ── APPT LIST ── */
+.appt-item {
+  display: flex; align-items: center; gap: 14px;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+}
+.appt-item:last-child { border-bottom: none; }
+.appt-time {
+  font-family: var(--mono); font-size: 11px; color: var(--text2);
+  min-width: 90px;
+}
+.appt-name { font-size: 13px; flex: 1; }
+
+/* ── EMPTY STATE ── */
+.empty {
+  text-align: center; padding: 48px 20px; color: var(--text3);
+  font-size: 13px;
+}
+.empty-icon { font-size: 28px; margin-bottom: 10px; }
+
+/* ── LOADING ── */
+.loading {
+  display: flex; align-items: center; justify-content: center;
+  padding: 60px; color: var(--text3); gap: 10px; font-size: 13px;
+}
+.spinner {
+  width: 18px; height: 18px; border: 2px solid var(--border2);
+  border-top-color: var(--copper); border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── BTN ── */
+.btn {
+  background: var(--copper); color: #fff; border: none; padding: 9px 16px;
+  border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;
+  transition: background 0.2s; font-family: var(--font);
+}
+.btn:hover { background: var(--copper2); }
+.btn-sm { padding: 6px 12px; font-size: 11px; }
+.btn-ghost {
+  background: none; border: 1px solid var(--border2); color: var(--text2);
+}
+.btn-ghost:hover { border-color: var(--copper); color: var(--text); background: none; }
+
+/* ── MODAL ── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 200; display: none;
+}
+.modal {
+  background: var(--bg2); border: 1px solid var(--border2);
+  border-radius: 10px; padding: 28px; width: 100%; max-width: 440px;
+  max-height: 85vh; overflow-y: auto;
+}
+.modal-title { font-size: 16px; font-weight: 600; margin-bottom: 20px; }
+.modal input, .modal select, .modal textarea {
+  width: 100%; background: var(--bg); border: 1px solid var(--border2);
+  color: var(--text); padding: 10px 12px; border-radius: 6px;
+  font-family: var(--font); font-size: 13px; outline: none;
+  margin-bottom: 12px;
+}
+.modal input:focus, .modal select:focus { border-color: var(--copper); }
+.modal label {
+  font-size: 11px; color: var(--text2); display: block;
+  margin-bottom: 4px; font-family: var(--mono);
+}
+.modal-actions { display: flex; gap: 10px; margin-top: 8px; }
+
+/* ── ROI CALC ── */
+.roi-result {
+  background: rgba(196,113,59,0.1); border: 1px solid rgba(196,113,59,0.2);
+  border-radius: var(--radius); padding: 16px; margin-top: 16px;
+}
+.roi-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 4px 0; font-size: 13px;
+}
+.roi-row.big .roi-val { font-size: 20px; color: var(--green); font-family: var(--mono); }
+
+/* ── TICKER ── */
+.ticker {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 12px 20px;
+  display: flex; align-items: center; gap: 20px;
+  overflow: hidden; margin-bottom: 24px;
+}
+.ticker-label {
+  font-size: 10px; letter-spacing: 0.15em; color: var(--copper);
+  text-transform: uppercase; font-family: var(--mono); white-space: nowrap;
+}
+.ticker-items {
+  display: flex; gap: 32px; animation: scroll 30s linear infinite;
+  white-space: nowrap;
+}
+@keyframes scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.ticker-item { font-size: 12px; color: var(--text2); font-family: var(--mono); }
+.ticker-item span { color: var(--green); }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  .sidebar { display: none; }
+  .main { padding: 16px; }
+  .stat-grid { grid-template-columns: repeat(2, 1fr); }
 }
 </style>
 </head>
 <body>
-<div class="grain"></div>
-<div class="orb orb-1"></div><div class="orb orb-2"></div>
 
-<!-- Loading overlay -->
-<div class="loading-overlay hide" id="loadingOverlay">
-  <div class="spinner"></div>
-  <p>Loading your dashboard</p>
-</div>
-
-<!-- ===================== LOGIN ===================== -->
-<div id="login">
-<div class="login-card">
-<div class="login-logo"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1700 810"><g transform="translate(0,810) scale(0.1,-0.1)"><path fill="#f5f4ee" d="M6540 7850 c-36 -4 -60 -7 -55 -8 176 -33 462 -118 630 -187 545-226 985 -604 1113 -958 l27 -72 0 -140 0 -140 -19 -65 c-39 -133 -114 -272-205 -378 -25 -30 -164 -153 -308 -274 -145 -121 -263 -222 -263 -225 0 -3 31-42 68 -87 38 -44 72 -86 75 -93 l7 -11 -686 -574 c-378 -315 -867 -724 -1088-908 -221 -184 -702 -587 -1071 -894 -368 -308 -735 -615 -815 -682 -80 -67-230 -193 -335 -280 -573 -476 -2064 -1720 -2085 -1740 l-25 -24 920 0 920 0446 373 c804 672 2050 1712 2733 2282 369 308 931 777 1249 1043 317 265 583485 590 488 7 2 44 -33 86 -84 l72 -89 257 -7 c141 -4 280 -12 307 -18 107-22 242 -108 315 -201 81 -101 105 -172 150 -442 l12 -70 175 -210 c96 -115180 -210 187 -210 15 0 1215 997 1215 1010 0 6 -78 105 -174 220 l-175 210-150 56 c-82 31 -169 68 -194 83 -102 60 -198 180 -244 307 l-26 74 2 227 3226 -16 99 c-44 255 -155 489 -343 718 -224 272 -555 630 -728 786 -287 259-489 401 -789 554 -302 154 -682 261 -1093 310 l-127 15 -240 -2 c-132 -1-269 -4 -305 -8z M10896 3190 c-251 -210 -456 -385 -454 -390 2 -5 172 -150 378 -322206 -172 717 -599 1135 -948 418 -349 972 -811 1230 -1027 l470 -393 918 0c504 0 917 2 917 4 0 2 -91 80 -202 173 -221 184 -1474 1230 -2113 1763 -543454 -1011 845 -1433 1199 -195 163 -361 302 -371 309 l-17 12 -458 -380z"/><path fill="#c4713b" d="M7520 2115 l0 -405 410 0 410 0 0 405 0 405 -410 0 -410 0 0 -405z M8930 2115 l0 -405 405 0 405 0 0 405 0 405 -405 0 -405 0 0 -405z M7520 865 l0 -405 410 0 410 0 0 405 0 405 -410 0 -410 0 0 -405z M8930 865 l0 -405 405 0 405 0 0 405 0 405 -405 0 -405 0 0 -405z"/></g></svg></div>
-<h1>Partner Dashboard</h1>
-<p class="sub">Sign in to see your live numbers.</p>
-<div class="field"><label>Email</label><input type="email" id="liEmail" placeholder="you@yourbusiness.com" autocomplete="username"></div>
-<div class="field"><label>Password</label><input type="password" id="liPass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
-<button class="login-btn" id="loginBtn" onclick="doLogin()">Log In</button>
-<div class="login-err" id="liErr"></div>
-<div class="demo-row">
-<p>Demo preview — no password needed</p>
-<div class="demo-btns">
-<button onclick="loginAs('client')">View as Contractor</button>
-<button onclick="loginAs('admin')">View as Admin</button>
-</div>
-</div>
-</div>
-</div>
-
-<!-- ===================== CLIENT APP ===================== -->
-<div class="app" id="clientApp">
-<div class="topbar">
-<div class="topbar-left">
-<div class="logo-mark"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1700 810"><g transform="translate(0,810) scale(0.1,-0.1)"><path fill="#f5f4ee" d="M6540 7850 c-36 -4 -60 -7 -55 -8 176 -33 462 -118 630 -187 545-226 985 -604 1113 -958 l27 -72 0 -140 0 -140 -19 -65 c-39 -133 -114 -272-205 -378 -25 -30 -164 -153 -308 -274 -145 -121 -263 -222 -263 -225 0 -3 31-42 68 -87 38 -44 72 -86 75 -93 l7 -11 -686 -574 c-378 -315 -867 -724 -1088-908 -221 -184 -702 -587 -1071 -894 -368 -308 -735 -615 -815 -682 -80 -67-230 -193 -335 -280 -573 -476 -2064 -1720 -2085 -1740 l-25 -24 920 0 920 0446 373 c804 672 2050 1712 2733 2282 369 308 931 777 1249 1043 317 265 583485 590 488 7 2 44 -33 86 -84 l72 -89 257 -7 c141 -4 280 -12 307 -18 107-22 242 -108 315 -201 81 -101 105 -172 150 -442 l12 -70 175 -210 c96 -115180 -210 187 -210 15 0 1215 997 1215 1010 0 6 -78 105 -174 220 l-175 210-150 56 c-82 31 -169 68 -194 83 -102 60 -198 180 -244 307 l-26 74 2 227 3226 -16 99 c-44 255 -155 489 -343 718 -224 272 -555 630 -728 786 -287 259-489 401 -789 554 -302 154 -682 261 -1093 310 l-127 15 -240 -2 c-132 -1-269 -4 -305 -8z M10896 3190 c-251 -210 -456 -385 -454 -390 2 -5 172 -150 378 -322206 -172 717 -599 1135 -948 418 -349 972 -811 1230 -1027 l470 -393 918 0c504 0 917 2 917 4 0 2 -91 80 -202 173 -221 184 -1474 1230 -2113 1763 -543454 -1011 845 -1433 1199 -195 163 -361 302 -371 309 l-17 12 -458 -380z"/><path fill="#c4713b" d="M7520 2115 l0 -405 410 0 410 0 0 405 0 405 -410 0 -410 0 0 -405z M8930 2115 l0 -405 405 0 405 0 0 405 0 405 -405 0 -405 0 0 -405z M7520 865 l0 -405 410 0 410 0 0 405 0 405 -410 0 -410 0 0 -405z M8930 865 l0 -405 405 0 405 0 0 405 0 405 -405 0 -405 0 0 -405z"/></g></svg></div>
-<div class="tb-divider"></div>
-<div class="tb-client"><div class="name" id="cName">—</div><div class="meta" id="cMeta">—</div></div>
-</div>
-<div class="topbar-right">
-<span class="badge demo" id="demoBadge" style="display:none">Demo</span>
-<div class="live-pill"><span class="live-dot"></span>LIVE</div>
-<button class="logout" onclick="logout()">Log out</button>
-</div>
-</div>
-<div class="ticker"><div class="ticker-track" id="tickerTrack"></div></div>
-<div class="wrap">
-<div style="display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:22px;flex-wrap:wrap">
-<div class="sec-label" style="margin:0">Your Performance</div>
-<div class="toggle-group" id="rangeToggle">
-<button data-r="week">This Week</button>
-<button data-r="month" class="on">This Month</button>
-<button data-r="all">All Time</button>
-</div>
-</div>
-<div class="roi-hero">
-<div class="lbl">Return On Investment</div>
-<div class="roi-big" id="roiBig">—</div>
-<div class="roi-sub" id="roiSub">—</div>
-</div>
-<div class="kpi-grid" id="kpiGrid"></div>
-<div class="panel">
-<div class="panel-head"><div><h3>The Guarantee</h3><div class="ph-sub">15 booked appointments in 30 days — or you don't pay.</div></div></div>
-<div class="gtrack">
-<div class="gtrack-top"><div class="gtrack-num"><span id="gNum">0</span> / 15</div><div class="gtrack-days" id="gDays">— days left</div></div>
-<div class="gbar"><div class="gbar-fill" id="gFill" style="width:0%"></div></div>
-<div class="gtrack-met" id="gMet">✓ Guarantee met — and we're still booking.</div>
-</div>
-</div>
-<div class="grid-2">
-<div class="panel">
-<div class="panel-head"><div><h3>Appointments & Revenue</h3><div class="ph-sub">Month over month</div></div></div>
-<div class="chart-box"><canvas id="trendChart"></canvas></div>
-</div>
-<div class="panel">
-<div class="panel-head"><div><h3>This Month's Calendar</h3><div class="ph-sub">Booked appointments</div></div></div>
-<div id="calWrap"></div>
-</div>
-</div>
-<div class="grid-2-even">
-<div class="panel">
-<div class="panel-head"><div><h3>Closed Jobs</h3><div class="ph-sub">Log what you closed — drives your real ROI</div></div></div>
-<table class="tbl"><thead><tr><th>Date</th><th>Type</th><th>Value</th></tr></thead><tbody id="jobsBody"></tbody></table>
-<div class="add-job">
-<input type="date" id="njDate"><input type="text" id="njType" placeholder="Job type (e.g. Driveway)"><input type="number" id="njVal" placeholder="Value $">
-<button onclick="addJob()">Add</button>
-</div>
-</div>
-<div class="panel">
-<div class="panel-head"><div><h3>Your Cost vs. The Lead Mills</h3><div class="ph-sub">Per exclusive booked appointment</div></div></div>
-<div class="cmp">
-<div class="cmp-side them"><div class="c-name">Angi / HomeAdvisor lead</div><div class="c-cost">$85–150</div><div class="c-note">Shared with 3–8 contractors. You fight over it. Many never answer.</div></div>
-<div class="cmp-side you"><div class="c-name">Your booked appointment</div><div class="c-cost" id="cmpYou">$—</div><div class="c-note">Exclusive. Qualified. Already on your calendar expecting your call.</div></div>
-</div>
-</div>
-</div>
-<div class="grid-2">
-<div class="panel">
-<div class="panel-head"><div><h3>Your Live Ads</h3><div class="ph-sub">Running in your territory right now</div></div></div>
-<div class="crv-grid" id="crvGrid"></div>
-</div>
-<div class="panel">
-<div class="panel-head"><div><h3>Your Territory</h3><div class="ph-sub">Locked to you alone</div></div></div>
-<div class="mini-territory">
-<div class="lock-ico">🔒</div>
-<div class="zone" id="terrZone">—</div>
-<div class="excl">No other <span id="terrTrade">—</span> contractor runs here. Exclusive to you.</div>
-</div>
-</div>
-</div>
-<div style="text-align:center;margin:8px 0 12px">
-<button class="btn-ghost" onclick="downloadReport()">⤓ Download This Month's Report (PDF)</button>
-</div>
-</div>
+<!-- ══════════════ LOGIN ══════════════ -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <span class="hammer-icon">🔨</span>
+      <div class="wordmark">The Hammer List</div>
+    </div>
+    <div class="login-title">Client Portal</div>
+    <div class="login-sub">Sign in to view your campaign results</div>
+    <div class="form-group">
+      <label>Email</label>
+      <input type="email" id="email-input" placeholder="you@company.com" autocomplete="email">
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="pass-input" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="btn-login" onclick="doLogin()">Sign In</button>
+    <div class="login-error" id="login-error">Invalid email or password.</div>
+    <div class="demo-divider"><span>or continue with demo</span></div>
+    <div class="demo-btns">
+      <button class="btn-demo" onclick="loadDemo('contractor')">👷 View as Contractor</button>
+      <button class="btn-demo" onclick="loadDemo('admin')">⚙️ View as Admin</button>
+    </div>
+  </div>
 </div>
 
-<!-- ===================== ADMIN APP ===================== -->
-<div class="app" id="adminApp">
-<div class="topbar">
-<div class="topbar-left">
-<div class="logo-mark"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1700 810"><g transform="translate(0,810) scale(0.1,-0.1)"><path fill="#f5f4ee" d="M6540 7850 c-36 -4 -60 -7 -55 -8 176 -33 462 -118 630 -187 545-226 985 -604 1113 -958 l27 -72 0 -140 0 -140 -19 -65 c-39 -133 -114 -272-205 -378 -25 -30 -164 -153 -308 -274 -145 -121 -263 -222 -263 -225 0 -3 31-42 68 -87 38 -44 72 -86 75 -93 l7 -11 -686 -574 c-378 -315 -867 -724 -1088-908 -221 -184 -702 -587 -1071 -894 -368 -308 -735 -615 -815 -682 -80 -67-230 -193 -335 -280 -573 -476 -2064 -1720 -2085 -1740 l-25 -24 920 0 920 0446 373 c804 672 2050 1712 2733 2282 369 308 931 777 1249 1043 317 265 583485 590 488 7 2 44 -33 86 -84 l72 -89 257 -7 c141 -4 280 -12 307 -18 107-22 242 -108 315 -201 81 -101 105 -172 150 -442 l12 -70 175 -210 c96 -115180 -210 187 -210 15 0 1215 997 1215 1010 0 6 -78 105 -174 220 l-175 210-150 56 c-82 31 -169 68 -194 83 -102 60 -198 180 -244 307 l-26 74 2 227 3226 -16 99 c-44 255 -155 489 -343 718 -224 272 -555 630 -728 786 -287 259-489 401 -789 554 -302 154 -682 261 -1093 310 l-127 15 -240 -2 c-132 -1-269 -4 -305 -8z M10896 3190 c-251 -210 -456 -385 -454 -390 2 -5 172 -150 378 -322206 -172 717 -599 1135 -948 418 -349 972 -811 1230 -1027 l470 -393 918 0c504 0 917 2 917 4 0 2 -91 80 -202 173 -221 184 -1474 1230 -2113 1763 -543454 -1011 845 -1433 1199 -195 163 -361 302 -371 309 l-17 12 -458 -380z"/><path fill="#c4713b" d="M7520 2115 l0 -405 410 0 410 0 0 405 0 405 -410 0 -410 0 0 -405z M8930 2115 l0 -405 405 0 405 0 0 405 0 405 -405 0 -405 0 0 -405z M7520 865 l0 -405 410 0 410 0 0 405 0 405 -410 0 -410 0 0 -405z M8930 865 l0 -405 405 0 405 0 0 405 0 405 -405 0 -405 0 0 -405z"/></g></svg></div>
-<div class="tb-divider"></div>
-<div class="tb-client"><div class="name">Command Center</div><div class="meta">Admin — All Partners</div></div>
-</div>
-<div class="topbar-right">
-<span class="badge admin">Admin</span>
-<span class="badge demo" id="adminDemoBadge" style="display:none">Demo</span>
-<div class="live-pill"><span class="live-dot"></span>LIVE</div>
-<button class="logout" onclick="logout()">Log out</button>
-</div>
-</div>
-<div class="wrap">
-<button class="back-btn" id="admBack" onclick="closeDrill()">← All partners</button>
-<div id="admOverview">
-<div class="sec-label">Portfolio — This Month</div>
-<div class="adm-totals" id="admTotals"></div>
-<div class="panel adm-clients">
-<div class="panel-head"><div><h3>All Partners</h3><div class="ph-sub">Click a partner to drill into their numbers</div></div></div>
-<table class="tbl"><thead><tr><th>Partner</th><th>Trade</th><th>City</th><th>Appts (mo)</th><th>Cost / Appt</th><th>ROI</th><th>Health</th><th>Status</th></tr></thead><tbody id="admBody"></tbody></table>
-</div>
-<div class="grid-2-even">
-<div class="panel">
-<div class="panel-head"><div><h3>Leaderboard</h3><div class="ph-sub">By ROI this month</div></div></div>
-<table class="tbl"><tbody id="lbBody"></tbody></table>
-</div>
-<div class="panel">
-<div class="panel-head"><div><h3>Preview Access Log</h3><div class="ph-sub">Prospects who viewed the partner preview</div></div></div>
-<table class="tbl"><thead><tr><th>Prospect</th><th>Trade / City</th><th>Viewed</th><th>Time</th></tr></thead><tbody id="pvBody"></tbody></table>
-</div>
-</div>
-</div>
-<div id="admDrill" style="display:none"></div>
-</div>
+<!-- ══════════════ DASHBOARD ══════════════ -->
+<div id="dashboard">
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-logo">⬛ The Hammer List</div>
+    <div class="demo-badge" id="demo-badge">DEMO MODE</div>
+    <div class="topbar-user" id="topbar-user"></div>
+    <button class="btn-logout" onclick="doLogout()">Sign Out</button>
+  </div>
+
+  <div class="layout">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-section" id="nav-client-section">
+        <div class="sidebar-label">Your Dashboard</div>
+        <div class="nav-item active" onclick="showView('overview')">
+          <span class="icon">📊</span> Overview
+        </div>
+        <div class="nav-item" onclick="showView('appointments')">
+          <span class="icon">📅</span> Appointments
+        </div>
+        <div class="nav-item" onclick="showView('jobs')">
+          <span class="icon">💰</span> Closed Jobs
+        </div>
+        <div class="nav-item" onclick="showView('roi')">
+          <span class="icon">🧮</span> ROI Calculator
+        </div>
+      </div>
+      <div class="sidebar-section" id="nav-admin-section" style="display:none">
+        <div class="sidebar-label">Admin</div>
+        <div class="nav-item" onclick="showView('admin-clients')">
+          <span class="icon">👥</span> All Clients
+        </div>
+        <div class="nav-item" onclick="showView('admin-overview')">
+          <span class="icon">🏢</span> Portfolio
+        </div>
+      </div>
+    </div>
+
+    <!-- Main -->
+    <div class="main">
+
+      <!-- ── OVERVIEW VIEW ── -->
+      <div class="view active" id="view-overview">
+        <div class="page-header">
+          <div class="page-title" id="overview-title">Loading...</div>
+          <div class="page-sub" id="overview-sub"></div>
+        </div>
+
+        <div class="ticker" id="ticker-bar" style="display:none">
+          <div class="ticker-label">Live</div>
+          <div class="ticker-items" id="ticker-content"></div>
+        </div>
+
+        <div class="stat-grid" id="stat-grid">
+          <div class="loading"><div class="spinner"></div> Fetching data...</div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">Appointments This Month</div>
+            </div>
+            <div class="panel-body">
+              <div class="chart-wrap"><canvas id="chart-appts"></canvas></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">Ad Spend vs Leads</div>
+            </div>
+            <div class="panel-body">
+              <div class="chart-wrap"><canvas id="chart-meta"></canvas></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel" style="margin-top:20px">
+          <div class="panel-header">
+            <div class="panel-title">Recent Appointments</div>
+          </div>
+          <div class="panel-body" id="appt-list">
+            <div class="loading"><div class="spinner"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── APPOINTMENTS VIEW ── -->
+      <div class="view" id="view-appointments">
+        <div class="page-header">
+          <div class="page-title">Appointments</div>
+          <div class="page-sub">All booked appointments from your campaigns</div>
+        </div>
+        <div class="panel">
+          <div class="panel-body table-wrap" id="appts-table-wrap">
+            <div class="loading"><div class="spinner"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── JOBS VIEW ── -->
+      <div class="view" id="view-jobs">
+        <div class="page-header" style="display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div class="page-title">Closed Jobs</div>
+            <div class="page-sub">Revenue attributed to Hammer List appointments</div>
+          </div>
+          <button class="btn" onclick="openAddJob()">+ Add Job</button>
+        </div>
+        <div class="panel">
+          <div class="panel-body table-wrap" id="jobs-table-wrap">
+            <div class="loading"><div class="spinner"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ROI CALCULATOR ── -->
+      <div class="view" id="view-roi">
+        <div class="page-header">
+          <div class="page-title">ROI Calculator</div>
+          <div class="page-sub">See your return on ad spend</div>
+        </div>
+        <div class="panel" style="max-width:480px">
+          <div class="panel-body">
+            <div class="form-group">
+              <label>Monthly Retainer ($)</label>
+              <input type="number" id="roi-retainer" value="2000" oninput="calcRoi()">
+            </div>
+            <div class="form-group">
+              <label>Monthly Ad Spend ($)</label>
+              <input type="number" id="roi-spend" value="1000" oninput="calcRoi()">
+            </div>
+            <div class="form-group">
+              <label>Appointments Booked</label>
+              <input type="number" id="roi-appts" value="15" oninput="calcRoi()">
+            </div>
+            <div class="form-group">
+              <label>Close Rate (%)</label>
+              <input type="number" id="roi-close" value="40" oninput="calcRoi()">
+            </div>
+            <div class="form-group">
+              <label>Avg Job Value ($)</label>
+              <input type="number" id="roi-jobval" value="8500" oninput="calcRoi()">
+            </div>
+            <div class="roi-result">
+              <div class="roi-row"><span>Jobs Closed</span><span id="roi-jobs" class="roi-val" style="font-family:var(--mono)">6</span></div>
+              <div class="roi-row"><span>Revenue Generated</span><span id="roi-revenue" class="roi-val" style="font-family:var(--mono)">$51,000</span></div>
+              <div class="roi-row"><span>Total Investment</span><span id="roi-invest" class="roi-val" style="font-family:var(--mono)">$3,000</span></div>
+              <div class="roi-row big" style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(196,113,59,0.2)">
+                <span style="font-weight:600">Net ROI</span>
+                <span id="roi-net" class="roi-val">17x</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ADMIN: ALL CLIENTS ── -->
+      <div class="view" id="view-admin-clients">
+        <div class="page-header">
+          <div class="page-title">All Clients</div>
+          <div class="page-sub">Portfolio overview — click any client to drill in</div>
+        </div>
+        <div class="panel">
+          <div class="panel-body table-wrap" id="admin-clients-wrap">
+            <div class="loading"><div class="spinner"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ADMIN: PORTFOLIO ── -->
+      <div class="view" id="view-admin-overview">
+        <div class="page-header">
+          <div class="page-title">Portfolio Overview</div>
+          <div class="page-sub">Aggregate metrics across all active clients</div>
+        </div>
+        <div class="stat-grid" id="admin-stat-grid">
+          <div class="loading"><div class="spinner"></div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Revenue by Client</div></div>
+          <div class="panel-body">
+            <div class="chart-wrap"><canvas id="chart-admin"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /main -->
+  </div><!-- /layout -->
+</div><!-- /dashboard -->
+
+<!-- ── ADD JOB MODAL ── -->
+<div class="modal-overlay" id="job-modal">
+  <div class="modal">
+    <div class="modal-title">Add Closed Job</div>
+    <label>Client Name</label>
+    <input type="text" id="job-client" placeholder="e.g. John Smith">
+    <label>Job Description</label>
+    <input type="text" id="job-desc" placeholder="e.g. Stamped concrete driveway">
+    <label>Job Value ($)</label>
+    <input type="number" id="job-val" placeholder="8500">
+    <label>Date Closed</label>
+    <input type="date" id="job-date">
+    <div class="modal-actions">
+      <button class="btn" onclick="submitJob()">Save Job</button>
+      <button class="btn btn-ghost" onclick="closeModal('job-modal')">Cancel</button>
+    </div>
+  </div>
 </div>
 
 <script>
-/* =====================================================================
-   SUPABASE CONFIG
-===================================================================== */
+// ═══════════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════════
 const SUPABASE_URL = 'https://zaxowlcsraiknvvxddyg.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_Xxq_FQ5FwSz5QrvGpN_HKQ_ai_guQ2n';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const SUPABASE_KEY = 'sb_publishable_Xxq_FQ5FwSz5QrvGpN_HKQ_ai_guQ2n';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-const ADMIN_EMAIL = 'admin@thehammerlist.com';
+let CURRENT_USER = null;
+let CURRENT_CLIENT = null;
+let IS_ADMIN = false;
+let IS_DEMO = false;
+let charts = {};
 
-/* =====================================================================
-   DEMO DATA LAYER
-   Used when demo buttons are clicked. Swap out for live pulls
-   once Meta + GHL sync functions are running.
-===================================================================== */
-const MONTHS = ['Dec','Jan','Feb','Mar','Apr','May'];
+// ═══════════════════════════════════════════════
+// DEMO DATA
+// ═══════════════════════════════════════════════
 const DEMO_CLIENTS = [
-  {
-    id:'cpe', login:'steven@concretepluseastcoast.org', name:'Concrete Plus Eastcoast',
-    trade:'Concrete', city:'Jacksonville, FL', region:'Southeast', zip:'32204',
-    monthsActive:4, retainer:2000,
-    spend:1240, leads:38, apptsBooked:19, apptsShown:14, avgJobValue:8500,
-    closedRevenue:42500,
-    trend:{appts:[0,11,14,17,16,19], revenue:[0,17000,25500,34000,29750,42500]},
-    creatives:[
-      {name:'Driveway — Before/After', status:'active'},
-      {name:'Stamped Patio — Spring', status:'active'},
-      {name:'Free Quote — Lead Form', status:'paused'}
-    ],
-    jobs:[
-      {date:'2026-05-22', type:'Driveway replacement', value:11200},
-      {date:'2026-05-15', type:'Stamped patio', value:9800},
-      {date:'2026-05-08', type:'Foundation pour', value:14500},
-      {date:'2026-05-03', type:'Walkway + steps', value:7000}
-    ],
-    calendar:[2,3,3,1,2,4,1,3]
-  },
-  {
-    id:'sed', login:'mark@summitedgedecking.com', name:'Summit Edge Decking',
-    trade:'Decking', city:'Missoula, MT', region:'Mountain West', zip:'59801',
-    monthsActive:2, retainer:2500,
-    spend:1680, leads:29, apptsBooked:16, apptsShown:12, avgJobValue:16000,
-    closedRevenue:64000,
-    trend:{appts:[0,0,0,0,13,16], revenue:[0,0,0,0,48000,64000]},
-    creatives:[
-      {name:'Composite Deck — Hero', status:'active'},
-      {name:'Luxury Cedar — Premium', status:'active'},
-      {name:'Outdoor Living — Video', status:'active'}
-    ],
-    jobs:[
-      {date:'2026-05-20', type:'Composite deck 400sqft', value:22000},
-      {date:'2026-05-12', type:'Cedar deck + pergola', value:28000},
-      {date:'2026-05-05', type:'Deck repair + stain', value:14000}
-    ],
-    calendar:[2,1,3,2,3,2,3]
-  },
-  {
-    id:'dgt', login:'tony@desertgreenturf.com', name:'Desert Green Turf',
-    trade:'Turfing', city:'Las Vegas, NV', region:'Southwest', zip:'89101',
-    monthsActive:6, retainer:2000,
-    spend:1420, leads:44, apptsBooked:21, apptsShown:17, avgJobValue:8500,
-    closedRevenue:51000,
-    trend:{appts:[14,16,15,18,19,21], revenue:[34000,40000,38000,44000,46000,51000]},
-    creatives:[
-      {name:'Backyard Turf — Summer', status:'active'},
-      {name:'Pet Turf — Targeted', status:'active'},
-      {name:'Water Bill Savings', status:'paused'}
-    ],
-    jobs:[
-      {date:'2026-05-24', type:'Backyard turf 1200sqft', value:13500},
-      {date:'2026-05-18', type:'Front yard + putting green', value:18000},
-      {date:'2026-05-09', type:'Pet turf install', value:7500}
-    ],
-    calendar:[3,2,4,2,3,3,4]
-  },
-  {
-    id:'wcc', login:'jorge@wasatchconcrete.com', name:'Wasatch Concrete Co.',
-    trade:'Concrete', city:'Salt Lake City, UT', region:'Mountain West', zip:'84101',
-    monthsActive:5, retainer:2000,
-    spend:1310, leads:35, apptsBooked:15, apptsShown:11, avgJobValue:9000,
-    closedRevenue:36000,
-    trend:{appts:[12,13,14,16,14,15], revenue:[27000,30000,33000,38000,32000,36000]},
-    creatives:[
-      {name:'Driveway — Winter Prep', status:'active'},
-      {name:'Decorative Concrete', status:'active'}
-    ],
-    jobs:[
-      {date:'2026-05-21', type:'Driveway + apron', value:12000},
-      {date:'2026-05-14', type:'Decorative patio', value:10500},
-      {date:'2026-05-06', type:'Garage slab', value:8000}
-    ],
-    calendar:[2,2,3,1,3,2,2]
-  },
-  {
-    id:'mhc', login:'ricardo@milehighconcrete.com', name:'Mile High Concrete',
-    trade:'Concrete', city:'Denver, CO', region:'Mountain West', zip:'80202',
-    monthsActive:3, retainer:2000,
-    spend:1180, leads:31, apptsBooked:9, apptsShown:6, avgJobValue:8500,
-    closedRevenue:17000,
-    trend:{appts:[0,0,12,15,14,9], revenue:[0,0,29000,36000,30000,17000]},
-    creatives:[
-      {name:'Driveway — Standard', status:'active'},
-      {name:'Patio — Lead Form', status:'paused'}
-    ],
-    jobs:[
-      {date:'2026-05-19', type:'Driveway repair', value:9000},
-      {date:'2026-05-10', type:'Sidewalk pour', value:8000}
-    ],
-    calendar:[1,2,1,2,1,1,1]
-  },
-  {
-    id:'pkh', login:'dale@peakhvac.com', name:'Peak HVAC',
-    trade:'HVAC', city:'Roanoke, VA', region:'Mid-Atlantic', zip:'24011',
-    monthsActive:1, retainer:2200,
-    spend:1520, leads:41, apptsBooked:17, apptsShown:13, avgJobValue:9500,
-    closedRevenue:47500,
-    trend:{appts:[0,0,0,0,0,17], revenue:[0,0,0,0,0,47500]},
-    creatives:[
-      {name:'AC Tune-Up — Spring', status:'active'},
-      {name:'Furnace Replace — Finance', status:'active'},
-      {name:'Emergency Repair 24/7', status:'active'}
-    ],
-    jobs:[
-      {date:'2026-05-23', type:'Full system replace', value:14500},
-      {date:'2026-05-16', type:'AC install', value:9000},
-      {date:'2026-05-07', type:'Furnace + ductwork', value:12000}
-    ],
-    calendar:[3,2,3,2,3,2,2]
-  }
+  { id: 'd1', name: 'Concrete Plus Eastcoast', trade: 'Concrete', city: 'Jacksonville, FL', email: 'steven@concretepluseastcoast.org', retainer_amount: 2000, avg_job_value: 8500, is_active: true, meta_ad_account_id: 'act_26999634576294929' },
+  { id: 'd2', name: 'JP Air Dr LLC', trade: 'HVAC', city: 'Louisiana', email: 'robin@jpairdr.com', retainer_amount: 2500, avg_job_value: 6000, is_active: true },
+  { id: 'd3', name: 'The Best Landscape', trade: 'Turfing', city: 'Las Vegas', email: 'ricardo@thebestlandscape.com', retainer_amount: 2000, avg_job_value: 12000, is_active: true },
+  { id: 'd4', name: 'Lasting Decks', trade: 'Decking', city: 'Missoula', email: 'info@lastingdecks.com', retainer_amount: 2000, avg_job_value: 15000, is_active: true },
+  { id: 'd5', name: 'Houston Area Concrete', trade: 'Concrete', city: 'Houston', email: 'info@houstonareaconcrete.com', retainer_amount: 2000, avg_job_value: 9000, is_active: true },
 ];
 
-const PREVIEW_LOG = [
-  {name:'Jose Martinez', biz:'Smokes Concrete', loc:'Concrete · San Diego, CA', viewed:'Today, 9:42 AM', dur:'14 min', cards:3},
-  {name:'Karl Weber', biz:'Weber Decks', loc:'Decking · Boise, ID', viewed:'Yesterday, 4:18 PM', dur:'22 min', cards:5},
-  {name:'Dana Ruiz', biz:'Ruiz Turf', loc:'Turfing · Mesa, AZ', viewed:'2 days ago', dur:'6 min', cards:2}
+const DEMO_METRICS = {
+  d1: { appts_booked: 18, appts_shown: 14, leads: 42, ad_spend: 1200, impressions: 38000, clicks: 890 },
+  d2: { appts_booked: 12, appts_shown: 9, leads: 28, ad_spend: 900, impressions: 22000, clicks: 540 },
+  d3: { appts_booked: 21, appts_shown: 17, leads: 55, ad_spend: 1400, impressions: 61000, clicks: 1200 },
+  d4: { appts_booked: 15, appts_shown: 11, leads: 38, ad_spend: 1100, impressions: 29000, clicks: 670 },
+  d5: { appts_booked: 19, appts_shown: 15, leads: 47, ad_spend: 1300, impressions: 44000, clicks: 980 },
+};
+
+const DEMO_APPTS = [
+  { contact_name: 'Mike Rodriguez', start_time: new Date(Date.now()-86400000).toISOString(), status: 'confirmed' },
+  { contact_name: 'Sarah Johnson', start_time: new Date(Date.now()-172800000).toISOString(), status: 'attended' },
+  { contact_name: 'Tom Davis', start_time: new Date(Date.now()-259200000).toISOString(), status: 'confirmed' },
+  { contact_name: 'Lisa Chen', start_time: new Date(Date.now()+86400000).toISOString(), status: 'confirmed' },
+  { contact_name: 'James Wilson', start_time: new Date(Date.now()+172800000).toISOString(), status: 'confirmed' },
 ];
 
-/* =====================================================================
-   HELPERS
-===================================================================== */
-const $=s=>document.querySelector(s);
-const money=n=>{if(Math.abs(n)>=1e6)return '$'+(n/1e6).toFixed(1).replace(/\.0$/,'')+'M';if(Math.abs(n)>=1000)return '$'+Math.round(n/100)/10+'K';return '$'+Math.round(n).toLocaleString()};
-const moneyFull=n=>'$'+Math.round(n).toLocaleString();
-const trendTag=(cur,prev)=>{if(!prev||prev===0)return{cls:'flat',txt:'NEW'};const d=Math.round((cur-prev)/prev*100);if(d>2)return{cls:'up',txt:'▲ '+d+'%'};if(d<-2)return{cls:'down',txt:'▼ '+Math.abs(d)+'%'};return{cls:'flat',txt:'— '+d+'%'}};
-const roiMult=c=>(c.closedRevenue/(c.spend+c.retainer));
-const costPerAppt=c=>c.apptsBooked>0?c.spend/c.apptsBooked:0;
-const cpl=c=>c.leads>0?c.spend/c.leads:0;
-const health=c=>{let s=0;s+=Math.min(c.apptsBooked/15,1)*40;const prev=c.trend.appts.at(-2)||1;s+=Math.max(Math.min(c.apptsBooked/Math.max(prev,1),1.2),0)/1.2*30;s+=Math.min(roiMult(c)/20,1)*30;return Math.round(s)};
-const churn=c=>{const prev=c.trend.appts.at(-2);return prev>0&&c.apptsBooked<prev*0.7};
-const showLoading=()=>$('#loadingOverlay').classList.remove('hide');
-const hideLoading=()=>$('#loadingOverlay').classList.add('hide');
-const fmtDate=s=>{const d=new Date(s+'T00:00');return d.toLocaleDateString('en-US',{month:'short',day:'numeric'})};
+const DEMO_JOBS = [
+  { client_name: 'Rodriguez', description: 'Stamped concrete driveway', job_value: 9200, closed_date: '2026-05-28' },
+  { client_name: 'Davis', description: 'Concrete patio + walkway', job_value: 7800, closed_date: '2026-05-22' },
+  { client_name: 'Chen', description: 'Decorative pool deck', job_value: 14500, closed_date: '2026-05-15' },
+];
 
-let SESSION=null, CURRENT=null, IS_DEMO=false, trendChartObj=null, RANGE='month';
+// ═══════════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════════
+async function doLogin() {
+  const email = document.getElementById('email-input').value.trim();
+  const pass = document.getElementById('pass-input').value;
+  document.getElementById('login-error').style.display = 'none';
 
-/* =====================================================================
-   AUTH — SUPABASE + DEMO
-===================================================================== */
-async function doLogin(){
-  const email=$('#liEmail').value.trim().toLowerCase();
-  const pass=$('#liPass').value;
-  $('#liErr').textContent='';
-  if(!email||!pass){$('#liErr').textContent='Enter your email and password.';return;}
-  $('#loginBtn').classList.add('loading');
-  $('#loginBtn').textContent='Signing in…';
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+  if (error) {
+    document.getElementById('login-error').style.display = 'block';
+    return;
+  }
+  CURRENT_USER = data.user;
+  IS_DEMO = false;
+  await loadRealDashboard();
+}
 
-  const {data,error} = await sb.auth.signInWithPassword({email,password:pass});
+async function loadRealDashboard() {
+  // Check if admin
+  const email = CURRENT_USER.email;
+  IS_ADMIN = (email === 'admin@thehammerlist.com' || email === 'david@thehammerlist.com' || email === 'humza@thehammerlist.com' || email === 'sher@thehammerlist.com');
 
-  $('#loginBtn').classList.remove('loading');
-  $('#loginBtn').textContent='Log In';
+  if (!IS_ADMIN) {
+    // Load client row by auth_user_id or email
+    const { data: clients } = await sb.from('clients').select('*').eq('email', email).limit(1);
+    CURRENT_CLIENT = clients?.[0] || null;
+  }
 
-  if(error){$('#liErr').textContent='Incorrect email or password.';return;}
+  document.getElementById('topbar-user').textContent = CURRENT_USER.email;
+  document.getElementById('demo-badge').style.display = 'none';
+  showDashboard();
+}
 
-  IS_DEMO=false;
-  if(email===ADMIN_EMAIL){
-    SESSION='admin'; CURRENT=null;
+async function checkSession() {
+  const { data } = await sb.auth.getSession();
+  if (data?.session?.user) {
+    CURRENT_USER = data.session.user;
+    IS_DEMO = false;
+    await loadRealDashboard();
+  }
+}
+
+function doLogout() {
+  if (!IS_DEMO) sb.auth.signOut();
+  IS_DEMO = false; IS_ADMIN = false; CURRENT_USER = null; CURRENT_CLIENT = null;
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+}
+
+// ═══════════════════════════════════════════════
+// DEMO
+// ═══════════════════════════════════════════════
+function loadDemo(role) {
+  IS_DEMO = true;
+  IS_ADMIN = (role === 'admin');
+  CURRENT_CLIENT = IS_ADMIN ? null : DEMO_CLIENTS[0];
+  document.getElementById('topbar-user').textContent = IS_ADMIN ? 'admin@thehammerlist.com' : 'steven@concretepluseastcoast.org';
+  document.getElementById('demo-badge').style.display = 'inline-block';
+  showDashboard();
+}
+
+// ═══════════════════════════════════════════════
+// DASHBOARD SETUP
+// ═══════════════════════════════════════════════
+function showDashboard() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+  document.getElementById('nav-admin-section').style.display = IS_ADMIN ? 'block' : 'none';
+
+  if (IS_ADMIN) {
+    showView('admin-clients');
   } else {
-    SESSION='client';
-    await loadClientData(data.user);
+    showView('overview');
   }
-  showApp();
 }
 
-async function loadClientData(user){
-  showLoading();
-  try {
-    // Fetch client row from Supabase
-    const {data:client,error} = await sb
-      .from('clients')
-      .select('*')
-      .eq('auth_user_id', user.id)
-      .single();
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('view-' + id)?.classList.add('active');
+  document.querySelector(`[onclick="showView('${id}')"]`)?.classList.add('active');
 
-    if(error||!client){
-      // Client row exists in auth but not in clients table yet
-      hideLoading();
-      $('#liErr').textContent='Account found but not fully set up. Contact support.';
-      await sb.auth.signOut();
-      return;
-    }
-
-    // Fetch current month metrics
-    const monthStr = new Date().toISOString().slice(0,7)+'-01';
-    const {data:metrics} = await sb
-      .from('metrics')
-      .select('*')
-      .eq('client_id', client.id)
-      .eq('month', monthStr)
-      .maybeSingle();
-
-    // Fetch last 6 months for trend
-    const {data:trendRows} = await sb
-      .from('metrics')
-      .select('month,appts_booked,spend,leads')
-      .eq('client_id', client.id)
-      .order('month', {ascending:true})
-      .limit(6);
-
-    // Fetch closed jobs this month
-    const {data:jobs} = await sb
-      .from('closed_jobs')
-      .select('*')
-      .eq('client_id', client.id)
-      .gte('closed_date', monthStr.slice(0,7)+'-01')
-      .order('closed_date', {ascending:false});
-
-    // Fetch ad creatives
-    const {data:creatives} = await sb
-      .from('ad_creatives')
-      .select('name,status,thumbnail_url')
-      .eq('client_id', client.id)
-      .in('status',['active','paused']);
-
-    // Fetch appointments this month for calendar
-    const {data:appts} = await sb
-      .from('appointments')
-      .select('appt_at,status')
-      .eq('client_id', client.id)
-      .gte('appt_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString())
-      .order('appt_at', {ascending:true});
-
-    const m = metrics || {};
-    const closedRevenue = (jobs||[]).reduce((s,j)=>s+Number(j.job_value),0);
-
-    // Build CURRENT in same shape as demo data
-    CURRENT = {
-      id: client.id,
-      name: client.name,
-      trade: client.trade,
-      city: client.city,
-      region: client.region,
-      retainer: Number(client.retainer_amount),
-      avgJobValue: Number(client.avg_job_value),
-      monthsActive: client.months_active,
-      spend: Number(m.spend||0),
-      leads: Number(m.leads||0),
-      apptsBooked: Number(m.appts_booked||0),
-      apptsShown: Number(m.appts_shown||0),
-      closedRevenue,
-      // Build trend arrays from DB rows
-      trend: {
-        appts: (trendRows||[]).map(r=>r.appts_booked||0),
-        revenue: Array((trendRows||[]).length).fill(0) // will populate once monthly revenue stored
-      },
-      creatives: (creatives||[]).map(c=>({name:c.name,status:c.status,thumbnail_url:c.thumbnail_url})),
-      jobs: (jobs||[]).map(j=>({date:j.closed_date,type:j.job_type,value:Number(j.job_value)})),
-      // Build calendar counts from appointments
-      calendarAppts: (appts||[]),
-      _supabaseId: client.id
-    };
-  } catch(e) {
-    console.error('loadClientData error:',e);
-  }
-  hideLoading();
+  if (id === 'overview') loadOverview();
+  if (id === 'appointments') loadAppointments();
+  if (id === 'jobs') loadJobs();
+  if (id === 'roi') loadRoi();
+  if (id === 'admin-clients') loadAdminClients();
+  if (id === 'admin-overview') loadAdminOverview();
 }
 
-function loginAs(role){
-  IS_DEMO=true;
-  if(role==='admin'){SESSION='admin';CURRENT=null;}
-  else{SESSION='client';CURRENT=JSON.parse(JSON.stringify(DEMO_CLIENTS[0]));}
-  showApp();
-}
+// ═══════════════════════════════════════════════
+// OVERVIEW
+// ═══════════════════════════════════════════════
+async function loadOverview() {
+  let client, metrics, appts;
 
-async function logout(){
-  if(!IS_DEMO) await sb.auth.signOut();
-  SESSION=null;CURRENT=null;IS_DEMO=false;
-  $('#login').style.display='flex';
-  $('#clientApp').classList.remove('active');
-  $('#adminApp').classList.remove('active');
-  $('#liEmail').value='';$('#liPass').value='';
-  $('#liErr').textContent='';
-}
-
-function showApp(){
-  $('#login').style.display='none';
-  if(SESSION==='client'){
-    $('#adminApp').classList.remove('active');
-    $('#clientApp').classList.add('active');
-    $('#demoBadge').style.display=IS_DEMO?'':'none';
-    renderClient(CURRENT);
+  if (IS_DEMO) {
+    client = DEMO_CLIENTS[0];
+    metrics = DEMO_METRICS['d1'];
+    appts = DEMO_APPTS;
   } else {
-    $('#clientApp').classList.remove('active');
-    $('#adminApp').classList.add('active');
-    $('#adminDemoBadge').style.display=IS_DEMO?'':'none';
-    renderAdmin();
+    client = CURRENT_CLIENT;
+    if (!client) { document.getElementById('stat-grid').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div>Client profile not found.</div>'; return; }
+
+    const now = new Date();
+    const month = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
+
+    const [mRes, aRes] = await Promise.all([
+      sb.from('metrics').select('*').eq('client_id', client.id).eq('month', month).single(),
+      sb.from('appointments').select('*').eq('client_id', client.id).order('start_time', { ascending: false }).limit(10)
+    ]);
+    metrics = mRes.data || {};
+    appts = aRes.data || [];
   }
-  window.scrollTo(0,0);
+
+  // Header
+  document.getElementById('overview-title').textContent = client.name;
+  document.getElementById('overview-sub').textContent = `${client.trade} · ${client.city}`;
+
+  // Ticker
+  buildTicker(client, metrics);
+
+  // Stats
+  const apptGoal = 15;
+  const progress = Math.min(100, Math.round((metrics.appts_booked || 0) / apptGoal * 100));
+  const roi = metrics.ad_spend > 0
+    ? (((metrics.appts_booked || 0) * 0.35 * (client.avg_job_value || 8500)) / ((client.retainer_amount || 2000) + (metrics.ad_spend || 0))).toFixed(1) + 'x'
+    : '—';
+
+  document.getElementById('stat-grid').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">Appts Booked</div>
+      <div class="stat-val copper">${metrics.appts_booked || 0}</div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${progress}%"></div></div>
+      <div class="stat-change">${progress}% of 15 goal</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Appts Shown</div>
+      <div class="stat-val">${metrics.appts_shown || 0}</div>
+      <div class="stat-change">${metrics.appts_booked ? Math.round((metrics.appts_shown||0)/(metrics.appts_booked)*100) : 0}% show rate</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Leads Generated</div>
+      <div class="stat-val blue">${metrics.leads || 0}</div>
+      <div class="stat-change">From Meta campaigns</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Ad Spend</div>
+      <div class="stat-val">$${(metrics.ad_spend || 0).toLocaleString()}</div>
+      <div class="stat-change">This month</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Impressions</div>
+      <div class="stat-val">${fmtNum(metrics.impressions || 0)}</div>
+      <div class="stat-change">${fmtNum(metrics.clicks || 0)} clicks</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Est. ROI</div>
+      <div class="stat-val green">${roi}</div>
+      <div class="stat-change">Return on investment</div>
+    </div>
+  `;
+
+  // Charts
+  buildApptsChart(metrics);
+  buildMetaChart(metrics);
+
+  // Appointments list
+  const list = document.getElementById('appt-list');
+  if (!appts.length) {
+    list.innerHTML = '<div class="empty"><div class="empty-icon">📅</div>No appointments yet this month</div>';
+    return;
+  }
+  list.innerHTML = appts.map(a => `
+    <div class="appt-item">
+      <div class="appt-time">${fmtDate(a.start_time)}</div>
+      <div class="appt-name">${a.contact_name || 'Unknown'}</div>
+      <div>${statusBadge(a.status)}</div>
+    </div>
+  `).join('');
 }
 
-// On page load — check if already logged in via Supabase session
-(async()=>{
-  const {data:{session}} = await sb.auth.getSession();
-  if(session){
-    IS_DEMO=false;
-    const email = session.user.email;
-    if(email===ADMIN_EMAIL){SESSION='admin';CURRENT=null;showApp();}
-    else{SESSION='client';await loadClientData(session.user);if(CURRENT)showApp();}
-  }
-})();
-
-/* =====================================================================
-   CLIENT RENDER (identical logic, works for both live + demo data)
-===================================================================== */
-function renderClient(c){
-  if(!c)return;
-  $('#cName').textContent=c.name;
-  $('#cMeta').textContent=c.trade+' · '+c.city;
-  const r=roiMult(c);
-  $('#roiBig').innerHTML=(isNaN(r)||!isFinite(r)?'—':r.toFixed(1))+'<span>x</span>';
-  $('#roiSub').innerHTML='You invested <b>'+moneyFull(c.spend+c.retainer)+'</b> this month. You closed <b>'+moneyFull(c.closedRevenue)+'</b> in jobs.';
-  renderKPIs(c);
-  const g=Math.min(c.apptsBooked,15);
-  $('#gNum').textContent=c.apptsBooked;
-  $('#gFill').style.width=Math.round(g/15*100)+'%';
-  $('#gDays').textContent=(30-new Date().getDate())+' days left in cycle';
-  $('#gMet').classList.toggle('show',c.apptsBooked>=15);
-  $('#cmpYou').textContent=costPerAppt(c)>0?'$'+Math.round(costPerAppt(c)):'$—';
-  $('#crvGrid').innerHTML=(c.creatives||[]).map(cr=>`<div class="crv"><div class="crv-thumb">${cr.thumbnail_url?`<img src="${cr.thumbnail_url}" loading="lazy">`:(c.trade||'').toUpperCase()}</div><div class="crv-body"><div class="cr-name">${cr.name}</div><div class="crv-status ${cr.status}"><span class="s-dot"></span>${cr.status}</div></div></div>`).join('');
-  $('#terrZone').textContent=c.city.toUpperCase();
-  $('#terrTrade').textContent=c.trade;
-  renderJobs(c);
-  renderCalendar(c);
-  renderTrend(c);
-  renderTicker();
-}
-
-function renderKPIs(c){
-  const t=c.trend,i=(t.appts||[]).length-1;
-  let appts=c.apptsBooked,leads=c.leads,spend=c.spend;
-  if(RANGE==='all'){appts=(t.appts||[]).reduce((a,b)=>a+b,0);leads=Math.round(c.leads*(c.monthsActive||1)*0.9);spend=Math.round(c.spend*(c.monthsActive||1)*0.95);}
-  else if(RANGE==='week'){appts=Math.round(c.apptsBooked*0.25);leads=Math.round(c.leads*0.25);spend=Math.round(c.spend*0.25);}
-  const cpa=spend/Math.max(appts,1);
-  const apTag=trendTag(t.appts?.[i]||0,t.appts?.[i-1]||0);
-  const cards=[
-    {l:'Appointments Booked',v:appts,foot:`<span class="k-trend ${apTag.cls}">${apTag.txt}</span> vs last month`},
-    {l:'Qualified Leads',v:leads,foot:`${(leads/Math.max(appts,1)).toFixed(1)} leads per booking`},
-    {l:'Ad Spend',v:money(spend),foot:`${RANGE==='all'?'lifetime':RANGE==='week'?'this week':'this month'}`},
-    {l:'Cost / Appointment',v:'$'+Math.round(cpa),foot:`exclusive & booked`}
+function buildTicker(client, metrics) {
+  const ticker = document.getElementById('ticker-bar');
+  const content = document.getElementById('ticker-content');
+  ticker.style.display = 'flex';
+  const items = [
+    `Appts Booked <span>${metrics.appts_booked || 0}</span>`,
+    `Show Rate <span>${metrics.appts_booked ? Math.round((metrics.appts_shown||0)/(metrics.appts_booked)*100) : 0}%</span>`,
+    `Leads <span>${metrics.leads || 0}</span>`,
+    `Ad Spend <span>$${(metrics.ad_spend||0).toLocaleString()}</span>`,
+    `Impressions <span>${fmtNum(metrics.impressions||0)}</span>`,
+    `Clicks <span>${fmtNum(metrics.clicks||0)}</span>`,
   ];
-  $('#kpiGrid').innerHTML=cards.map(k=>`<div class="kpi"><div class="k-lbl">${k.l}</div><div class="k-val">${k.v}</div><div class="k-foot">${k.foot}</div></div>`).join('');
+  const html = [...items, ...items].map(i => `<div class="ticker-item">${i}</div>`).join('');
+  content.innerHTML = html;
 }
 
-document.querySelectorAll('#rangeToggle button').forEach(b=>b.onclick=()=>{
-  document.querySelectorAll('#rangeToggle button').forEach(x=>x.classList.remove('on'));
-  b.classList.add('on');RANGE=b.dataset.r;if(CURRENT)renderKPIs(CURRENT);
-});
-
-function renderJobs(c){
-  $('#jobsBody').innerHTML=(c.jobs||[]).map(j=>`<tr><td>${fmtDate(j.date)}</td><td><b>${j.type}</b></td><td><b>${moneyFull(j.value)}</b></td></tr>`).join('');
-}
-
-async function addJob(){
-  const d=$('#njDate').value,t=$('#njType').value.trim(),v=+$('#njVal').value;
-  if(!d||!t||!v)return;
-  const newJob={date:d,type:t,value:v};
-
-  // If live session, write to Supabase
-  if(!IS_DEMO && CURRENT._supabaseId){
-    const {error} = await sb.from('closed_jobs').insert({
-      client_id: CURRENT._supabaseId,
-      closed_date: d,
-      job_type: t,
-      job_value: v,
-      logged_by: 'client'
-    });
-    if(error){alert('Could not save job. Try again.');return;}
-  }
-
-  CURRENT.jobs.unshift(newJob);
-  CURRENT.closedRevenue+=v;
-  $('#njDate').value='';$('#njType').value='';$('#njVal').value='';
-  renderJobs(CURRENT);
-  const r=roiMult(CURRENT);
-  $('#roiBig').innerHTML=(isNaN(r)||!isFinite(r)?'—':r.toFixed(1))+'<span>x</span>';
-  $('#roiSub').innerHTML='You invested <b>'+moneyFull(CURRENT.spend+CURRENT.retainer)+'</b> this month. You closed <b>'+moneyFull(CURRENT.closedRevenue)+'</b> in jobs.';
-}
-
-function renderCalendar(c){
-  const now=new Date(),y=now.getFullYear(),m=now.getMonth();
-  const first=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate(),today=now.getDate();
-  // Build counts per day from calendarAppts (live) or calendar array (demo)
-  const booked={};
-  if(c.calendarAppts && c.calendarAppts.length){
-    c.calendarAppts.forEach(a=>{
-      const day=new Date(a.appt_at).getDate();
-      booked[day]=(booked[day]||0)+1;
-    });
-  } else if(c.calendar){
-    let day=2;
-    c.calendar.forEach(cnt=>{
-      while(day<=days&&new Date(y,m,day).getDay()%6===0)day++;
-      if(day<=days){booked[day]=cnt;day+=Math.floor(days/c.calendar.length);}
-    });
-  }
-  let html='<div class="cal-grid">'+['S','M','T','W','T','F','S'].map(d=>`<div class="cal-dow">${d}</div>`).join('');
-  for(let i=0;i<first;i++)html+='<div class="cal-day empty"></div>';
-  for(let d=1;d<=days;d++){
-    const has=booked[d];
-    html+=`<div class="cal-day ${has?'has':''} ${d===today?'today':''}">${has?`<span class="cnt">${has}</span>`:''}${d}</div>`;
-  }
-  html+='</div>';
-  $('#calWrap').innerHTML=html;
-}
-
-function renderTrend(c){
-  const ctx=document.getElementById('trendChart');
-  if(trendChartObj)trendChartObj.destroy();
-  const labels=c.trend.appts&&c.trend.appts.length?MONTHS.slice(-c.trend.appts.length):MONTHS;
-  trendChartObj=new Chart(ctx,{
-    data:{labels,datasets:[
-      {type:'bar',label:'Appointments',data:c.trend.appts||[],backgroundColor:'rgba(196,113,59,.55)',borderRadius:6,yAxisID:'y',order:2},
-      {type:'line',label:'Revenue',data:c.trend.revenue||[],borderColor:'#e8945a',backgroundColor:'rgba(232,148,90,.1)',borderWidth:2.5,tension:.4,pointRadius:3,pointBackgroundColor:'#e8945a',yAxisID:'y1',fill:true,order:1}
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,interaction:{intersect:false,mode:'index'},
-      plugins:{legend:{labels:{color:'#b0ad9e',font:{family:'JetBrains Mono',size:10},usePointStyle:true,boxWidth:6}},
-        tooltip:{callbacks:{label:c2=>c2.dataset.label==='Revenue'?'Revenue: '+moneyFull(c2.raw):'Appointments: '+c2.raw}}},
-      scales:{
-        x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#8a8778',font:{family:'JetBrains Mono',size:10}}},
-        y:{position:'left',grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#8a8778',font:{family:'JetBrains Mono',size:10}}},
-        y1:{position:'right',grid:{display:false},ticks:{color:'#8a8778',font:{family:'JetBrains Mono',size:10},callback:v=>money(v)}}
-      }}
+function buildApptsChart(metrics) {
+  destroyChart('chart-appts');
+  const ctx = document.getElementById('chart-appts').getContext('2d');
+  charts['chart-appts'] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Booked', 'Shown', 'Goal'],
+      datasets: [{
+        data: [metrics.appts_booked || 0, metrics.appts_shown || 0, 15],
+        backgroundColor: ['rgba(196,113,59,0.8)', 'rgba(74,222,128,0.8)', 'rgba(255,255,255,0.1)'],
+        borderRadius: 4, borderSkipped: false,
+      }]
+    },
+    options: chartOpts()
   });
 }
 
-function renderTicker(){
-  const events=['New appointment booked','Lead qualified','Homeowner confirmed','Campaign optimized','Appointment booked','New lead in pipeline','Follow-up sent'];
-  const trades=['HVAC','Concrete','Decking','Turfing'];
-  const regions=['Southeast','Mountain West','Southwest','Mid-Atlantic'];
-  let items=[];
-  for(let i=0;i<10;i++){
-    const ev=events[Math.floor(Math.random()*events.length)];
-    const tr=trades[Math.floor(Math.random()*trades.length)];
-    const rg=regions[Math.floor(Math.random()*regions.length)];
-    items.push(`<span class="ticker-item"><span class="tdot"></span>${ev} — <b>${tr} Partner, ${rg}</b></span>`);
+function buildMetaChart(metrics) {
+  destroyChart('chart-meta');
+  const ctx = document.getElementById('chart-meta').getContext('2d');
+  charts['chart-meta'] = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Ad Spend', 'Leads', 'Clicks'],
+      datasets: [{
+        data: [metrics.ad_spend || 0, (metrics.leads || 0) * 50, (metrics.clicks || 0) * 2],
+        backgroundColor: ['rgba(196,113,59,0.8)', 'rgba(96,165,250,0.8)', 'rgba(74,222,128,0.8)'],
+        borderWidth: 0,
+      }]
+    },
+    options: { ...chartOpts(), cutout: '65%' }
+  });
+}
+
+// ═══════════════════════════════════════════════
+// APPOINTMENTS
+// ═══════════════════════════════════════════════
+async function loadAppointments() {
+  const wrap = document.getElementById('appts-table-wrap');
+  let appts;
+
+  if (IS_DEMO) {
+    appts = [...DEMO_APPTS, ...DEMO_APPTS.map(a => ({...a, contact_name: a.contact_name + ' (2)', start_time: new Date(new Date(a.start_time).getTime() - 7*86400000).toISOString()}))];
+  } else {
+    const { data } = await sb.from('appointments').select('*').eq('client_id', CURRENT_CLIENT?.id).order('start_time', { ascending: false });
+    appts = data || [];
   }
-  $('#tickerTrack').innerHTML=items.join('')+items.join('');
+
+  if (!appts.length) { wrap.innerHTML = '<div class="empty"><div class="empty-icon">📅</div>No appointments found</div>'; return; }
+
+  wrap.innerHTML = `<table>
+    <thead><tr><th>Name</th><th>Date & Time</th><th>Status</th></tr></thead>
+    <tbody>${appts.map(a => `
+      <tr>
+        <td>${a.contact_name || 'Unknown'}</td>
+        <td style="font-family:var(--mono);font-size:12px">${fmtDate(a.start_time)}</td>
+        <td>${statusBadge(a.status)}</td>
+      </tr>
+    `).join('')}</tbody>
+  </table>`;
 }
 
-/* =====================================================================
-   REPORT
-===================================================================== */
-function downloadReport(){
-  const c=CURRENT;
-  const w=window.open('','_blank');
-  w.document.write(`<html><head><title>${c.name} — Report</title>
-  <style>body{font-family:Arial,sans-serif;max-width:760px;margin:40px auto;color:#111;padding:0 24px}
-  h1{color:#15366b}.k{display:flex;justify-content:space-between;border-bottom:1px solid #eee;padding:12px 0}
-  .big{font-size:42px;color:#c4713b;font-weight:800}table{width:100%;border-collapse:collapse;margin-top:8px}
-  td,th{text-align:left;padding:8px;border-bottom:1px solid #eee;font-size:14px}.muted{color:#777}</style></head><body>
-  <h1>The Hammer List — Monthly Report</h1>
-  <p class="muted">${c.name} · ${c.trade} · ${c.city}</p>
-  <div class="big">${roiMult(c).toFixed(1)}x return</div>
-  <div class="k"><span>Appointments booked</span><b>${c.apptsBooked}</b></div>
-  <div class="k"><span>Qualified leads</span><b>${c.leads}</b></div>
-  <div class="k"><span>Ad spend</span><b>${moneyFull(c.spend)}</b></div>
-  <div class="k"><span>Cost per appointment</span><b>$${Math.round(costPerAppt(c))}</b></div>
-  <div class="k"><span>Closed revenue (reported)</span><b>${moneyFull(c.closedRevenue)}</b></div>
-  <h3 style="margin-top:28px">Closed jobs</h3>
-  <table><tr><th>Date</th><th>Type</th><th>Value</th></tr>
-  ${(c.jobs||[]).map(j=>`<tr><td>${fmtDate(j.date)}</td><td>${j.type}</td><td>${moneyFull(j.value)}</td></tr>`).join('')}</table>
-  <p class="muted" style="margin-top:32px">The Hammer List Inc. — Growth Partner for Home Service Contractors</p>
-  </body></html>`);
-  w.document.close();setTimeout(()=>w.print(),300);
-}
+// ═══════════════════════════════════════════════
+// JOBS
+// ═══════════════════════════════════════════════
+async function loadJobs() {
+  const wrap = document.getElementById('jobs-table-wrap');
+  let jobs;
 
-/* =====================================================================
-   ADMIN RENDER
-===================================================================== */
-function renderAdmin(){
-  closeDrill();
-  // Always use demo data for admin view until live admin API is built
-  const clients = DEMO_CLIENTS;
-  const tot={appts:0,leads:0,spend:0,rev:0};
-  clients.forEach(c=>{tot.appts+=c.apptsBooked;tot.leads+=c.leads;tot.spend+=c.spend;tot.rev+=c.closedRevenue;});
-  const avgRoi=(clients.reduce((a,c)=>a+roiMult(c),0)/clients.length);
-  const cards=[
-    {l:'Active Partners',v:clients.length},
-    {l:'Appointments (mo)',v:tot.appts},
-    {l:'Total Leads (mo)',v:tot.leads},
-    {l:'Ad Spend (mo)',v:money(tot.spend)},
-    {l:'Avg ROI',v:avgRoi.toFixed(1)+'x'}
-  ];
-  $('#admTotals').innerHTML=cards.map(k=>`<div class="kpi"><div class="k-lbl">${k.l}</div><div class="k-val">${k.v}</div></div>`).join('');
-  $('#admBody').innerHTML=clients.map(c=>{
-    const h=health(c),hc=h>=70?'var(--green)':h>=45?'var(--amber)':'var(--red)';
-    const st=c.monthsActive<=1?'<span class="chip new">New</span>':churn(c)?'<span class="chip risk">Churn risk</span>':'<span class="chip ok">Healthy</span>';
-    return `<tr onclick="drill('${c.id}')"><td><b>${c.name}</b></td><td>${c.trade}</td><td>${c.city}</td><td><b>${c.apptsBooked}</b></td><td>$${Math.round(costPerAppt(c))}</td><td><b>${roiMult(c).toFixed(1)}x</b></td><td><span class="health"><span class="health-bar"><i style="width:${h}%;background:${hc}"></i></span>${h}</span></td><td>${st}</td></tr>`;
-  }).join('');
-  const lb=[...clients].sort((a,b)=>roiMult(b)-roiMult(a));
-  $('#lbBody').innerHTML=lb.map((c,i)=>`<tr><td><span class="rank ${i===0?'top':''}">${i+1}</span></td><td><b>${c.name}</b><div class="note">${c.trade} · ${c.city}</div></td><td style="text-align:right"><b style="color:var(--accent)">${roiMult(c).toFixed(1)}x</b></td></tr>`).join('');
-  $('#pvBody').innerHTML=PREVIEW_LOG.map(p=>`<tr><td><b>${p.name}</b><div class="note">${p.biz}</div></td><td>${p.loc}</td><td>${p.viewed}</td><td>${p.dur} · ${p.cards} cards</td></tr>`).join('');
-}
+  if (IS_DEMO) {
+    jobs = DEMO_JOBS;
+  } else {
+    const { data } = await sb.from('closed_jobs').select('*').eq('client_id', CURRENT_CLIENT?.id).order('closed_date', { ascending: false });
+    jobs = data || [];
+  }
 
-function drill(id){
-  const c=DEMO_CLIENTS.find(x=>x.id===id);CURRENT=c;
-  $('#admOverview').style.display='none';
-  $('#admDrill').style.display='block';
-  $('#admBack').classList.add('show');
-  $('#admDrill').innerHTML=`
-    <div class="sec-label">${c.name} — ${c.trade} · ${c.city}</div>
-    <div class="roi-hero"><div class="lbl">Return On Investment</div><div class="roi-big">${roiMult(c).toFixed(1)}<span>x</span></div>
-    <div class="roi-sub">Invested <b>${moneyFull(c.spend+c.retainer)}</b> (incl. ${moneyFull(c.retainer)} retainer) · Closed <b>${moneyFull(c.closedRevenue)}</b></div></div>
-    <div class="kpi-grid">
-      <div class="kpi"><div class="k-lbl">Appts Booked</div><div class="k-val">${c.apptsBooked}</div><div class="k-foot">${c.apptsShown} showed up</div></div>
-      <div class="kpi"><div class="k-lbl">Leads</div><div class="k-val">${c.leads}</div><div class="k-foot">CPL $${Math.round(cpl(c))}</div></div>
-      <div class="kpi"><div class="k-lbl">Ad Spend</div><div class="k-val">${money(c.spend)}</div><div class="k-foot">+ ${moneyFull(c.retainer)} retainer</div></div>
-      <div class="kpi"><div class="k-lbl">Cost / Appt</div><div class="k-val">$${Math.round(costPerAppt(c))}</div><div class="k-foot">Health ${health(c)}/100</div></div>
+  if (!jobs.length) { wrap.innerHTML = '<div class="empty"><div class="empty-icon">💰</div>No closed jobs yet. Add your first one!</div>'; return; }
+
+  const total = jobs.reduce((s, j) => s + (j.job_value || 0), 0);
+  wrap.innerHTML = `
+    <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+      <div style="font-family:var(--mono);font-size:13px;color:var(--text2)">
+        Total Revenue: <span style="color:var(--green);font-size:16px">$${total.toLocaleString()}</span>
+      </div>
     </div>
-    <div class="grid-2">
-      <div class="panel"><div class="panel-head"><h3>Appointments & Revenue</h3></div><div class="chart-box"><canvas id="drillChart"></canvas></div></div>
-      <div class="panel"><div class="panel-head"><h3>Closed Jobs</h3></div><table class="tbl"><thead><tr><th>Date</th><th>Type</th><th>Value</th></tr></thead><tbody>${c.jobs.map(j=>`<tr><td>${fmtDate(j.date)}</td><td><b>${j.type}</b></td><td><b>${moneyFull(j.value)}</b></td></tr>`).join('')}</tbody></table></div>
-    </div>`;
-  const ctx=document.getElementById('drillChart');
-  new Chart(ctx,{data:{labels:MONTHS,datasets:[
-    {type:'bar',label:'Appointments',data:c.trend.appts,backgroundColor:'rgba(196,113,59,.55)',borderRadius:6,yAxisID:'y'},
-    {type:'line',label:'Revenue',data:c.trend.revenue,borderColor:'#e8945a',borderWidth:2.5,tension:.4,pointRadius:3,yAxisID:'y1',backgroundColor:'rgba(232,148,90,.1)',fill:true}
-  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#b0ad9e',font:{family:'JetBrains Mono',size:10},usePointStyle:true,boxWidth:6}}},scales:{x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#8a8778',font:{size:10}}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#8a8778',font:{size:10}}},y1:{position:'right',grid:{display:false},ticks:{color:'#8a8778',font:{size:10},callback:v=>money(v)}}}}});
-  window.scrollTo(0,0);
+    <table>
+      <thead><tr><th>Client</th><th>Description</th><th>Value</th><th>Date</th></tr></thead>
+      <tbody>${jobs.map(j => `
+        <tr>
+          <td>${j.client_name || '—'}</td>
+          <td>${j.description || '—'}</td>
+          <td style="font-family:var(--mono);color:var(--green)">$${(j.job_value||0).toLocaleString()}</td>
+          <td style="font-family:var(--mono);font-size:12px;color:var(--text2)">${j.closed_date || '—'}</td>
+        </tr>
+      `).join('')}</tbody>
+    </table>`;
 }
 
-function closeDrill(){
-  $('#admOverview').style.display='block';
-  $('#admDrill').style.display='none';
-  $('#admBack').classList.remove('show');
+function openAddJob() {
+  document.getElementById('job-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('job-modal').style.display = 'flex';
 }
+
+async function submitJob() {
+  const job = {
+    client_name: document.getElementById('job-client').value,
+    description: document.getElementById('job-desc').value,
+    job_value: parseFloat(document.getElementById('job-val').value),
+    closed_date: document.getElementById('job-date').value,
+    client_id: CURRENT_CLIENT?.id || null,
+  };
+
+  if (!IS_DEMO) {
+    await sb.from('closed_jobs').insert(job);
+  } else {
+    DEMO_JOBS.unshift(job);
+  }
+  closeModal('job-modal');
+  loadJobs();
+}
+
+// ═══════════════════════════════════════════════
+// ROI
+// ═══════════════════════════════════════════════
+function loadRoi() {
+  if (CURRENT_CLIENT) {
+    document.getElementById('roi-retainer').value = CURRENT_CLIENT.retainer_amount || 2000;
+    document.getElementById('roi-jobval').value = CURRENT_CLIENT.avg_job_value || 8500;
+  }
+  calcRoi();
+}
+
+function calcRoi() {
+  const retainer = parseFloat(document.getElementById('roi-retainer').value) || 0;
+  const spend = parseFloat(document.getElementById('roi-spend').value) || 0;
+  const appts = parseFloat(document.getElementById('roi-appts').value) || 0;
+  const close = parseFloat(document.getElementById('roi-close').value) || 0;
+  const jobval = parseFloat(document.getElementById('roi-jobval').value) || 0;
+
+  const jobs = Math.round(appts * (close / 100));
+  const revenue = jobs * jobval;
+  const invest = retainer + spend;
+  const net = invest > 0 ? (revenue / invest).toFixed(1) + 'x' : '—';
+
+  document.getElementById('roi-jobs').textContent = jobs;
+  document.getElementById('roi-revenue').textContent = '$' + revenue.toLocaleString();
+  document.getElementById('roi-invest').textContent = '$' + invest.toLocaleString();
+  document.getElementById('roi-net').textContent = net;
+}
+
+// ═══════════════════════════════════════════════
+// ADMIN: CLIENTS
+// ═══════════════════════════════════════════════
+async function loadAdminClients() {
+  const wrap = document.getElementById('admin-clients-wrap');
+  let clients;
+
+  if (IS_DEMO) {
+    clients = DEMO_CLIENTS.map(c => ({ ...c, metrics: DEMO_METRICS[c.id] || {} }));
+  } else {
+    const now = new Date();
+    const month = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
+    const { data: cData } = await sb.from('clients').select('*').eq('is_active', true);
+    const { data: mData } = await sb.from('metrics').select('*').eq('month', month);
+    clients = (cData || []).map(c => ({
+      ...c,
+      metrics: mData?.find(m => m.client_id === c.id) || {}
+    }));
+  }
+
+  if (!clients.length) { wrap.innerHTML = '<div class="empty"><div class="empty-icon">👥</div>No clients found</div>'; return; }
+
+  wrap.innerHTML = `<table>
+    <thead><tr><th>Client</th><th>Trade</th><th>City</th><th>Appts</th><th>Leads</th><th>Spend</th><th>Status</th></tr></thead>
+    <tbody>${clients.map(c => {
+      const m = c.metrics || {};
+      return `<tr class="client-row" onclick="drillClient('${c.id}')">
+        <td style="font-weight:500">${c.name}</td>
+        <td><span class="badge badge-blue">${c.trade}</span></td>
+        <td style="color:var(--text2);font-size:12px">${c.city}</td>
+        <td style="font-family:var(--mono)">${m.appts_booked || 0}</td>
+        <td style="font-family:var(--mono)">${m.leads || 0}</td>
+        <td style="font-family:var(--mono)">$${(m.ad_spend||0).toLocaleString()}</td>
+        <td>${(m.appts_booked||0) >= 15 ? '<span class="badge badge-green">On Track</span>' : '<span class="badge badge-yellow">In Progress</span>'}</td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table>`;
+}
+
+async function drillClient(clientId) {
+  if (IS_DEMO) {
+    CURRENT_CLIENT = DEMO_CLIENTS.find(c => c.id === clientId);
+  } else {
+    const { data } = await sb.from('clients').select('*').eq('id', clientId).single();
+    CURRENT_CLIENT = data;
+  }
+  showView('overview');
+}
+
+// ═══════════════════════════════════════════════
+// ADMIN: PORTFOLIO
+// ═══════════════════════════════════════════════
+async function loadAdminOverview() {
+  let clients, allMetrics;
+
+  if (IS_DEMO) {
+    clients = DEMO_CLIENTS;
+    allMetrics = Object.values(DEMO_METRICS);
+  } else {
+    const now = new Date();
+    const month = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
+    const [cRes, mRes] = await Promise.all([
+      sb.from('clients').select('*').eq('is_active', true),
+      sb.from('metrics').select('*').eq('month', month)
+    ]);
+    clients = cRes.data || [];
+    allMetrics = mRes.data || [];
+  }
+
+  const totAppts = allMetrics.reduce((s, m) => s + (m.appts_booked || 0), 0);
+  const totLeads = allMetrics.reduce((s, m) => s + (m.leads || 0), 0);
+  const totSpend = allMetrics.reduce((s, m) => s + (m.ad_spend || 0), 0);
+  const totImpr = allMetrics.reduce((s, m) => s + (m.impressions || 0), 0);
+
+  document.getElementById('admin-stat-grid').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Active Clients</div><div class="stat-val copper">${clients.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Total Appts</div><div class="stat-val">${totAppts}</div><div class="stat-change">This month</div></div>
+    <div class="stat-card"><div class="stat-label">Total Leads</div><div class="stat-val blue">${totLeads}</div></div>
+    <div class="stat-card"><div class="stat-label">Total Ad Spend</div><div class="stat-val">$${totSpend.toLocaleString()}</div></div>
+    <div class="stat-card"><div class="stat-label">Impressions</div><div class="stat-val">${fmtNum(totImpr)}</div></div>
+    <div class="stat-card"><div class="stat-label">MRR</div><div class="stat-val green">$${clients.reduce((s,c) => s+(c.retainer_amount||0), 0).toLocaleString()}</div></div>
+  `;
+
+  // Chart
+  destroyChart('chart-admin');
+  const ctx = document.getElementById('chart-admin').getContext('2d');
+  const clientMetrics = clients.map(c => {
+    const m = IS_DEMO ? (DEMO_METRICS[c.id] || {}) : (allMetrics.find(m => m.client_id === c.id) || {});
+    return { name: c.name.split(' ')[0], appts: m.appts_booked || 0 };
+  });
+
+  charts['chart-admin'] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: clientMetrics.map(c => c.name),
+      datasets: [{
+        label: 'Appointments',
+        data: clientMetrics.map(c => c.appts),
+        backgroundColor: 'rgba(196,113,59,0.8)',
+        borderRadius: 4, borderSkipped: false,
+      }]
+    },
+    options: chartOpts()
+  });
+}
+
+// ═══════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════
+function chartOpts() {
+  return {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#555550', font: { family: 'JetBrains Mono', size: 10 } } },
+      y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#555550', font: { family: 'JetBrains Mono', size: 10 } } }
+    }
+  };
+}
+
+function destroyChart(id) {
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+}
+
+function fmtDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+function fmtNum(n) {
+  if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
+  if (n >= 1000) return (n/1000).toFixed(1) + 'K';
+  return n.toString();
+}
+
+function statusBadge(status) {
+  const s = (status || '').toLowerCase();
+  if (s === 'attended' || s === 'showed' || s === 'completed') return '<span class="badge badge-green">Showed</span>';
+  if (s === 'confirmed' || s === 'scheduled') return '<span class="badge badge-blue">Confirmed</span>';
+  if (s === 'cancelled' || s === 'noshow') return '<span class="badge badge-red">No Show</span>';
+  return `<span class="badge badge-gray">${status || 'Unknown'}</span>`;
+}
+
+function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+document.getElementById('email-input').addEventListener('keydown', e => e.key === 'Enter' && doLogin());
+document.getElementById('pass-input').addEventListener('keydown', e => e.key === 'Enter' && doLogin());
+
+// Init
+checkSession();
 </script>
 </body>
 </html>
