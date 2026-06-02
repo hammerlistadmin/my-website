@@ -750,8 +750,8 @@ async function loadOverview() {
   // Stats
   const apptGoal = 15;
   const progress = Math.min(100, Math.round((metrics.appts_booked || 0) / apptGoal * 100));
-  const roi = metrics.ad_spend > 0
-    ? (((metrics.appts_booked || 0) * 0.35 * (client.avg_job_value || 8500)) / ((client.retainer_amount || 2000) + (metrics.ad_spend || 0))).toFixed(1) + 'x'
+  const roi = metrics.spend > 0
+    ? (((metrics.appts_booked || 0) * 0.35 * (client.avg_job_value || 8500)) / ((client.retainer_amount || 2000) + (metrics.spend || 0))).toFixed(1) + 'x'
     : '—';
 
   document.getElementById('stat-grid').innerHTML = `
@@ -773,7 +773,7 @@ async function loadOverview() {
     </div>
     <div class="stat-card">
       <div class="stat-label">Ad Spend</div>
-      <div class="stat-val">$${(metrics.ad_spend || 0).toLocaleString()}</div>
+      <div class="stat-val">$${(metrics.spend || 0).toLocaleString()}</div>
       <div class="stat-change">This month</div>
     </div>
     <div class="stat-card">
@@ -815,7 +815,7 @@ function buildTicker(client, metrics) {
     `Appts Booked <span>${metrics.appts_booked || 0}</span>`,
     `Show Rate <span>${metrics.appts_booked ? Math.round((metrics.appts_shown||0)/(metrics.appts_booked)*100) : 0}%</span>`,
     `Leads <span>${metrics.leads || 0}</span>`,
-    `Ad Spend <span>$${(metrics.ad_spend||0).toLocaleString()}</span>`,
+    `Ad Spend <span>$${(metrics.spend||0).toLocaleString()}</span>`,
     `Impressions <span>${fmtNum(metrics.impressions||0)}</span>`,
     `Clicks <span>${fmtNum(metrics.clicks||0)}</span>`,
   ];
@@ -848,7 +848,7 @@ function buildMetaChart(metrics) {
     data: {
       labels: ['Ad Spend', 'Leads', 'Clicks'],
       datasets: [{
-        data: [metrics.ad_spend || 0, (metrics.leads || 0) * 50, (metrics.clicks || 0) * 2],
+        data: [metrics.spend || 0, (metrics.leads || 0) * 50, (metrics.clicks || 0) * 2],
         backgroundColor: ['rgba(196,113,59,0.8)', 'rgba(96,165,250,0.8)', 'rgba(74,222,128,0.8)'],
         borderWidth: 0,
       }]
@@ -1005,7 +1005,7 @@ async function loadAdminClients() {
         <td style="color:var(--text2);font-size:12px">${c.city}</td>
         <td style="font-family:var(--mono)">${m.appts_booked || 0}</td>
         <td style="font-family:var(--mono)">${m.leads || 0}</td>
-        <td style="font-family:var(--mono)">$${(m.ad_spend||0).toLocaleString()}</td>
+        <td style="font-family:var(--mono)">$${(m.spend||0).toLocaleString()}</td>
         <td>${(m.appts_booked||0) >= 15 ? '<span class="badge badge-green">On Track</span>' : '<span class="badge badge-yellow">In Progress</span>'}</td>
       </tr>`;
     }).join('')}</tbody>
@@ -1044,7 +1044,7 @@ async function loadAdminOverview() {
 
   const totAppts = allMetrics.reduce((s, m) => s + (m.appts_booked || 0), 0);
   const totLeads = allMetrics.reduce((s, m) => s + (m.leads || 0), 0);
-  const totSpend = allMetrics.reduce((s, m) => s + (m.ad_spend || 0), 0);
+  const totSpend = allMetrics.reduce((s, m) => s + (m.spend || 0), 0);
   const totImpr = allMetrics.reduce((s, m) => s + (m.impressions || 0), 0);
 
   document.getElementById('admin-stat-grid').innerHTML = `
