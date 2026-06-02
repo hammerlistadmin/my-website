@@ -654,13 +654,41 @@ function getGuestMetrics(id) {
 const DEMO_CLIENTS = GUEST_CLIENTS;
 const DEMO_METRICS = Object.fromEntries(GUEST_CLIENTS.map(c => [c.id, getGuestMetrics(c.id)]));
 
-const DEMO_APPTS = [
-  { contact_name: 'M. Rodriguez', start_time: new Date(Date.now()-86400000).toISOString(), status: 'confirmed' },
-  { contact_name: 'S. Johnson', start_time: new Date(Date.now()-172800000).toISOString(), status: 'attended' },
-  { contact_name: 'T. Davis', start_time: new Date(Date.now()-259200000).toISOString(), status: 'confirmed' },
-  { contact_name: 'L. Chen', start_time: new Date(Date.now()+86400000).toISOString(), status: 'confirmed' },
-  { contact_name: 'J. Wilson', start_time: new Date(Date.now()+172800000).toISOString(), status: 'confirmed' },
-];
+function genDemoAppts() {
+  const names = [
+    'Marcus Rivera','Shane Kowalski','Tyrone Washington','Dmitri Petrov','Carlos Mendez',
+    'Jamal Brooks','Kevin O'Brien','Raj Patel','Derek Thornton','Mike Castellano',
+    'Andre Williams','Chris Nakamura','Bryce Henderson','Omar Khalid','Tony Deluca',
+    'Jason Morales','Brett Sullivan','Kwame Osei','Nathan Bergstrom','Luis Fuentes',
+    'Chad Whitfield','Arjun Singh','Brandon Koonce','Elijah Carter','Patrick Nguyen',
+    'Darnell Jackson','Travis Holbrook','Sven Eriksson','Malik Thompson','Joe Ferrara',
+  ];
+  const statuses = [
+    'attended','attended','attended','attended','attended',
+    'confirmed','confirmed','confirmed','confirmed','confirmed','confirmed','confirmed',
+    'showed','showed','showed',
+    'cancelled','rescheduled',
+  ];
+  const appts = [];
+  const now = Date.now();
+  for (let i = 0; i < 18; i++) {
+    const offset = (i - 8) * 86400000 + seededRand(SESSION_SEED + i * 73, 0, 7200000);
+    const s = SESSION_SEED + i * 41;
+    appts.push({
+      contact_name: names[seededRand(s, 0, names.length - 1)],
+      start_time: new Date(now + offset).toISOString(),
+      status: statuses[seededRand(s + 1, 0, statuses.length - 1)],
+    });
+  }
+  // Deduplicate names
+  const seen = new Set();
+  return appts.filter(a => {
+    if (seen.has(a.contact_name)) return false;
+    seen.add(a.contact_name);
+    return true;
+  });
+}
+const DEMO_APPTS = genDemoAppts();
 
 const DEMO_JOBS = [
   { client_name: 'M. Rodriguez', description: 'Stamped concrete driveway', job_value: 9200, closed_date: '2026-05-28' },
