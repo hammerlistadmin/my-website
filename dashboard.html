@@ -669,8 +669,8 @@ function genDemoAppts() {
   const appts = [];
   const usedNames = new Set();
 
-  // Past appointments (0-20 days ago) — can be attended/showed/cancelled
-  const pastStatuses = ['attended','attended','attended','showed','showed','confirmed','cancelled'];
+  // Past appointments (0-20 days ago) — never confirmed, already happened
+  const pastStatuses = ['attended','attended','attended','attended','showed','showed','showed','noshow','cancelled'];
   for (let i = 0; i < 12; i++) {
     const daysAgo = seededRand(SESSION_SEED + i * 17, 1, 20);
     const hourOffset = seededRand(SESSION_SEED + i * 31, 8, 18) * 3600000;
