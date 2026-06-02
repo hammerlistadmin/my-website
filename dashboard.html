@@ -767,7 +767,7 @@ async function loadOverview() {
       <div class="stat-change">${metrics.appts_booked ? Math.round((metrics.appts_shown||0)/(metrics.appts_booked)*100) : 0}% show rate</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">Leads Generated</div>
+      <div class="stat-label">Meta Meta Leads</div>
       <div class="stat-val blue">${metrics.leads || 0}</div>
       <div class="stat-change">From Meta campaigns</div>
     </div>
@@ -846,7 +846,7 @@ function buildMetaChart(metrics) {
   charts['chart-meta'] = new Chart(ctx, {
     type: 'doughnut',
     data: {
-      labels: ['Ad Spend', 'Leads', 'Clicks'],
+      labels: ['Ad Spend', 'Meta Leads', 'Clicks'],
       datasets: [{
         data: [metrics.spend || 0, (metrics.leads || 0) * 50, (metrics.clicks || 0) * 2],
         backgroundColor: ['rgba(196,113,59,0.8)', 'rgba(96,165,250,0.8)', 'rgba(74,222,128,0.8)'],
@@ -1050,7 +1050,7 @@ async function loadAdminOverview() {
   document.getElementById('admin-stat-grid').innerHTML = `
     <div class="stat-card"><div class="stat-label">Active Clients</div><div class="stat-val copper">${clients.length}</div></div>
     <div class="stat-card"><div class="stat-label">Total Appts</div><div class="stat-val">${totAppts}</div><div class="stat-change">This month</div></div>
-    <div class="stat-card"><div class="stat-label">Total Leads</div><div class="stat-val blue">${totLeads}</div></div>
+    <div class="stat-card"><div class="stat-label">Meta Leads</div><div class="stat-val blue">${totLeads}</div></div>
     <div class="stat-card"><div class="stat-label">Total Ad Spend</div><div class="stat-val">$${totSpend.toLocaleString()}</div></div>
     <div class="stat-card"><div class="stat-label">Impressions</div><div class="stat-val">${fmtNum(totImpr)}</div></div>
     <div class="stat-card"><div class="stat-label">MRR</div><div class="stat-val green">$${clients.reduce((s,c) => s+(c.retainer_amount||0), 0).toLocaleString()}</div></div>
