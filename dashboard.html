@@ -706,38 +706,47 @@ function genDemoAppts() {
 const DEMO_APPTS = genDemoAppts();
 
 function genDemoJobs() {
-  // All jobs in the past only — spread across last 5 months
-  // Each month gets 2-3 jobs totaling $60-80k per month
-  const jobData = [
-    // June 2026 (only days 1 and before today = Jun 1, so just today)
-    { name: 'Tyrone Washington', desc: 'Exposed aggregate driveway',        value: 16400, mo: '2026-06', day: 1 },
-    // May 2026
-    { name: 'Dmitri Petrov',     desc: 'Commercial parking lot section',    value: 38000, mo: '2026-05', day: 22 },
-    { name: 'Brett Sullivan',    desc: 'Backyard patio + outdoor kitchen',  value: 28500, mo: '2026-05', day: 14 },
-    { name: 'Mike Castellano',   desc: 'Stamped patio + steps',             value: 19200, mo: '2026-05', day: 7  },
-    // April 2026
-    { name: 'Kwame Osei',        desc: 'Commercial sidewalk replacement',   value: 31000, mo: '2026-04', day: 25 },
-    { name: 'Jason Morales',     desc: 'Full property flatwork package',    value: 24800, mo: '2026-04', day: 18 },
-    { name: 'Carlos Mendez',     desc: 'Full driveway replacement',         value: 12400, mo: '2026-04', day: 9  },
-    // March 2026
-    { name: 'Jamal Brooks',      desc: 'Decorative pool deck',              value: 22500, mo: '2026-03', day: 28 },
-    { name: 'Shane Kowalski',    desc: 'Stamped driveway + patio combo',    value: 17600, mo: '2026-03', day: 19 },
-    { name: 'Derek Thornton',    desc: 'Concrete patio + retaining wall',   value: 18200, mo: '2026-03', day: 11 },
-    { name: 'Luis Fuentes',      desc: 'Driveway + retaining wall',         value: 15900, mo: '2026-03', day: 4  },
-    // February 2026
-    { name: 'Marcus Rivera',     desc: 'Stamped concrete driveway',         value: 14800, mo: '2026-02', day: 24 },
-    { name: 'Omar Khalid',       desc: 'Decorative concrete porch + steps', value: 13200, mo: '2026-02', day: 17 },
-    { name: 'Andre Williams',    desc: 'Concrete driveway + apron',         value: 11600, mo: '2026-02', day: 8  },
-    { name: 'Raj Patel',         desc: 'Concrete flatwork + walkway',       value: 9800,  mo: '2026-02', day: 3  },
+  // Base job pool — each job has a fixed date relative to "today"
+  // New jobs appear every ~2 days going back in time from today
+  const today = new Date();
+  const todayStamp = today.getTime();
+
+  // Helper: get date N days ago as YYYY-MM-DD
+  function daysAgo(n) {
+    const d = new Date(todayStamp - n * 86400000);
+    return d.toISOString().split('T')[0];
+  }
+
+  const allJobs = [
+    { name: 'Tyrone Washington', desc: 'Exposed aggregate driveway',         value: 16400, daysBack: 0  },
+    { name: 'Dmitri Petrov',     desc: 'Commercial parking lot section',     value: 38000, daysBack: 2  },
+    { name: 'Brett Sullivan',    desc: 'Backyard patio + outdoor kitchen',   value: 28500, daysBack: 5  },
+    { name: 'Mike Castellano',   desc: 'Stamped patio + steps',              value: 19200, daysBack: 7  },
+    { name: 'Kwame Osei',        desc: 'Commercial sidewalk replacement',    value: 31000, daysBack: 10 },
+    { name: 'Jason Morales',     desc: 'Full property flatwork package',     value: 24800, daysBack: 12 },
+    { name: 'Carlos Mendez',     desc: 'Full driveway replacement',          value: 12400, daysBack: 16 },
+    { name: 'Jamal Brooks',      desc: 'Decorative pool deck',               value: 22500, daysBack: 19 },
+    { name: 'Shane Kowalski',    desc: 'Stamped driveway + patio combo',     value: 17600, daysBack: 22 },
+    { name: 'Derek Thornton',    desc: 'Concrete patio + retaining wall',    value: 18200, daysBack: 25 },
+    { name: 'Luis Fuentes',      desc: 'Driveway + retaining wall',          value: 15900, daysBack: 30 },
+    { name: 'Marcus Rivera',     desc: 'Stamped concrete driveway',          value: 14800, daysBack: 35 },
+    { name: 'Omar Khalid',       desc: 'Decorative concrete porch + steps',  value: 13200, daysBack: 40 },
+    { name: 'Andre Williams',    desc: 'Concrete driveway + apron',          value: 11600, daysBack: 45 },
+    { name: 'Raj Patel',         desc: 'Concrete flatwork + walkway',        value: 9800,  daysBack: 50 },
+    { name: 'Malik Thompson',    desc: 'Exposed aggregate patio',            value: 16800, daysBack: 55 },
+    { name: 'Patrick Nguyen',    desc: 'Stamped concrete pool deck',         value: 21200, daysBack: 60 },
+    { name: 'Sven Eriksson',     desc: 'Commercial entrance flatwork',       value: 27400, daysBack: 65 },
+    { name: 'Elijah Carter',     desc: 'Driveway replacement + border',      value: 13600, daysBack: 70 },
+    { name: 'Arjun Singh',       desc: 'Decorative driveway + steps',        value: 18900, daysBack: 75 },
   ];
-  return jobData.map((j, i) => {
-    const variance = seededRand(SESSION_SEED + i * 53, -400, 700);
-    const day = String(j.day).padStart(2,'0');
+
+  return allJobs.map((j, i) => {
+    const variance = seededRand(SESSION_SEED + i * 53, -300, 600);
     return {
       client_name: j.name,
       description: j.desc,
       job_value: j.value + variance,
-      closed_date: `${j.mo}-${day}`,
+      closed_date: daysAgo(j.daysBack),
     };
   });
 }
