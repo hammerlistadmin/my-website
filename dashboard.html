@@ -663,38 +663,75 @@ function genDemoAppts() {
     'Chad Whitfield','Arjun Singh','Brandon Koonce','Elijah Carter','Patrick Nguyen',
     'Darnell Jackson','Travis Holbrook','Sven Eriksson','Malik Thompson','Joe Ferrara',
   ];
-  const statuses = [
-    'attended','attended','attended','attended','attended',
-    'confirmed','confirmed','confirmed','confirmed','confirmed','confirmed','confirmed',
-    'showed','showed','showed',
-    'cancelled','rescheduled',
-  ];
-  const appts = [];
   const now = Date.now();
-  for (let i = 0; i < 18; i++) {
-    const offset = (i - 8) * 86400000 + seededRand(SESSION_SEED + i * 73, 0, 7200000);
-    const s = SESSION_SEED + i * 41;
+  const appts = [];
+  const usedNames = new Set();
+
+  // Past appointments (0-20 days ago) — can be attended/showed/cancelled
+  const pastStatuses = ['attended','attended','attended','showed','showed','confirmed','cancelled'];
+  for (let i = 0; i < 12; i++) {
+    const daysAgo = seededRand(SESSION_SEED + i * 17, 1, 20);
+    const hourOffset = seededRand(SESSION_SEED + i * 31, 8, 18) * 3600000;
+    let name;
+    let tries = 0;
+    do { name = names[seededRand(SESSION_SEED + i * 53 + tries, 0, names.length-1)]; tries++; } while (usedNames.has(name) && tries < 20);
+    usedNames.add(name);
     appts.push({
-      contact_name: names[seededRand(s, 0, names.length - 1)],
-      start_time: new Date(now + offset).toISOString(),
-      status: statuses[seededRand(s + 1, 0, statuses.length - 1)],
+      contact_name: name,
+      start_time: new Date(now - daysAgo * 86400000 + hourOffset).toISOString(),
+      status: pastStatuses[seededRand(SESSION_SEED + i * 71, 0, pastStatuses.length-1)],
     });
   }
-  // Deduplicate names
-  const seen = new Set();
-  return appts.filter(a => {
-    if (seen.has(a.contact_name)) return false;
-    seen.add(a.contact_name);
-    return true;
-  });
+
+  // Upcoming appointments (1-7 days from now) — always confirmed
+  for (let i = 0; i < 5; i++) {
+    const daysAhead = seededRand(SESSION_SEED + i * 23 + 1000, 1, 7);
+    const hourOffset = seededRand(SESSION_SEED + i * 43 + 1000, 8, 17) * 3600000;
+    let name;
+    let tries = 0;
+    do { name = names[seededRand(SESSION_SEED + i * 61 + 1000 + tries, 0, names.length-1)]; tries++; } while (usedNames.has(name) && tries < 20);
+    usedNames.add(name);
+    appts.push({
+      contact_name: name,
+      start_time: new Date(now + daysAhead * 86400000 + hourOffset).toISOString(),
+      status: 'confirmed',
+    });
+  }
+
+  // Sort by date descending
+  return appts.sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
 }
 const DEMO_APPTS = genDemoAppts();
 
-const DEMO_JOBS = [
-  { client_name: 'M. Rodriguez', description: 'Stamped concrete driveway', job_value: 9200, closed_date: '2026-05-28' },
-  { client_name: 'T. Davis', description: 'Concrete patio + walkway', job_value: 7800, closed_date: '2026-05-22' },
-  { client_name: 'L. Chen', description: 'Decorative pool deck', job_value: 14500, closed_date: '2026-05-15' },
-];
+function genDemoJobs() {
+  const jobData = [
+    { name: 'Marcus Rivera',     desc: 'Stamped concrete driveway',        value: 9200  },
+    { name: 'Derek Thornton',    desc: 'Concrete patio + retaining wall',  value: 11400 },
+    { name: 'Carlos Mendez',     desc: 'Full driveway replacement',        value: 8700  },
+    { name: 'Jamal Brooks',      desc: 'Decorative pool deck',             value: 14500 },
+    { name: 'Raj Patel',         desc: 'Concrete flatwork + walkway',      value: 6900  },
+    { name: 'Tyrone Washington', desc: 'Exposed aggregate driveway',       value: 10200 },
+    { name: 'Mike Castellano',   desc: 'Stamped patio + steps',            value: 12800 },
+    { name: 'Andre Williams',    desc: 'Concrete driveway + apron',        value: 7600  },
+    { name: 'Brett Sullivan',    desc: 'Backyard patio slab',              value: 5400  },
+    { name: 'Dmitri Petrov',     desc: 'Commercial parking lot section',   value: 22000 },
+    { name: 'Omar Khalid',       desc: 'Decorative concrete porch',        value: 8100  },
+    { name: 'Jason Morales',     desc: 'Driveway widening + curb',         value: 9800  },
+  ];
+  const months = ['2026-02','2026-03','2026-04','2026-05','2026-06'];
+  return jobData.map((j, i) => {
+    const mo = months[seededRand(SESSION_SEED + i * 19, 0, months.length-1)];
+    const day = String(seededRand(SESSION_SEED + i * 37, 1, 27)).padStart(2,'0');
+    const variance = seededRand(SESSION_SEED + i * 53, -500, 800);
+    return {
+      client_name: j.name,
+      description: j.desc,
+      job_value: j.value + variance,
+      closed_date: `${mo}-${day}`,
+    };
+  }).sort((a, b) => b.closed_date.localeCompare(a.closed_date));
+}
+const DEMO_JOBS = genDemoJobs();
 
 // ═══════════════════════════════════════════════
 // AUTH
