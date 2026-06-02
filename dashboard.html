@@ -330,6 +330,11 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 .ticker-item { font-size: 12px; color: var(--text2); font-family: var(--mono); }
 .ticker-item span { color: var(--green); }
 
+/* ── RANGE BUTTONS ── */
+.range-btn.active {
+  background: rgba(196,113,59,0.15); border-color: var(--copper); color: var(--copper);
+}
+
 /* ── RESPONSIVE ── */
 @media (max-width: 768px) {
   .sidebar { display: none; }
@@ -526,9 +531,16 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 
       <!-- ── ADMIN: ALL CLIENTS ── -->
       <div class="view" id="view-admin-clients">
-        <div class="page-header">
-          <div class="page-title">All Clients</div>
-          <div class="page-sub">Portfolio overview — click any client to drill in</div>
+        <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+          <div>
+            <div class="page-title">All Clients</div>
+            <div class="page-sub">Portfolio overview — click any client to drill in</div>
+          </div>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-ghost btn-sm range-btn active" onclick="setRange('all', this)">All Time</button>
+            <button class="btn btn-ghost btn-sm range-btn" onclick="setRange('month', this)">This Month</button>
+            <button class="btn btn-ghost btn-sm range-btn" onclick="setRange('30', this)">Last 30 Days</button>
+          </div>
         </div>
         <div class="panel">
           <div class="panel-body table-wrap" id="admin-clients-wrap">
@@ -976,6 +988,15 @@ function calcRoi() {
 // ═══════════════════════════════════════════════
 // ADMIN: CLIENTS
 // ═══════════════════════════════════════════════
+let CURRENT_RANGE = 'all';
+
+function setRange(range, btn) {
+  CURRENT_RANGE = range;
+  document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  loadAdminClients();
+}
+
 async function loadAdminClients() {
   const wrap = document.getElementById('admin-clients-wrap');
   let clients;
@@ -986,11 +1007,28 @@ async function loadAdminClients() {
     const now = new Date();
     const month = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
     const { data: cData } = await sb.from('clients').select('*').eq('is_active', true);
-    const { data: mData } = await sb.from('metrics').select('*');
-    clients = (cData || []).map(c => ({
-      ...c,
-      metrics: mData?.find(m => m.client_id === c.id) || {}
-    }));
+    let mQuery = sb.from('metrics').select('*');
+    if (CURRENT_RANGE === 'month') {
+      const now = new Date();
+      const month = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
+      mQuery = mQuery.eq('month', month);
+    } else if (CURRENT_RANGE === '30') {
+      const d = new Date(); d.setDate(d.getDate()-30);
+      mQuery = mQuery.gte('month', d.toISOString().split('T')[0]);
+    }
+    const { data: mData } = await mQuery;
+    clients = (cData || []).map(c => {
+      const rows = mData?.filter(m => m.client_id === c.id) || [];
+      const agg = rows.reduce((acc, m) => ({
+        appts_booked: (acc.appts_booked||0) + (m.appts_booked||0),
+        appts_shown: (acc.appts_shown||0) + (m.appts_shown||0),
+        leads: (acc.leads||0) + (m.leads||0),
+        spend: (acc.spend||0) + (m.spend||0),
+        impressions: (acc.impressions||0) + (m.impressions||0),
+        clicks: (acc.clicks||0) + (m.clicks||0),
+      }), {});
+      return { ...c, metrics: agg };
+    });
   }
 
   if (!clients.length) { wrap.innerHTML = '<div class="empty"><div class="empty-icon">👥</div>No clients found</div>'; return; }
