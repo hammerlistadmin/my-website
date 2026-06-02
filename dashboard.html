@@ -795,8 +795,7 @@ function loadDemo(role) {
   IS_DEMO = true;
   IS_ADMIN = (role === 'admin');
   CURRENT_CLIENT = IS_ADMIN ? null : DEMO_CLIENTS[0];
-  const guestEmails = ['contractor@phoenixconcrete.com','owner@nashvilleHVAC.com','info@denverdecking.com','contact@scottsdaleturfing.com','hello@charlottekitchens.com'];
-  document.getElementById('topbar-user').textContent = IS_ADMIN ? 'admin@thehammerlist.com' : guestEmails[seededRand(SESSION_SEED, 0, guestEmails.length-1)];
+  document.getElementById('topbar-user').textContent = IS_ADMIN ? 'admin@thehammerlist.com' : '';
   document.getElementById('demo-badge').style.display = 'inline-block';
   showDashboard();
 }
@@ -837,7 +836,7 @@ async function loadOverview() {
   let client, metrics, appts;
 
   if (IS_DEMO) {
-    client = CURRENT_CLIENT || GUEST_CLIENTS[0];
+    client = (CURRENT_CLIENT && CURRENT_CLIENT.id && CURRENT_CLIENT.id.startsWith('g')) ? CURRENT_CLIENT : GUEST_CLIENTS[0];
     metrics = getGuestMetrics(client.id);
     appts = DEMO_APPTS;
   } else {
