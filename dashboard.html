@@ -3,1309 +3,924 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>The Hammer List — Client Dashboard</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<title>The Hammer List — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-:root {
-  --bg: #0a0a0a;
-  --bg2: #111111;
-  --bg3: #1a1a1a;
-  --border: #222222;
-  --border2: #2a2a2a;
-  --copper: #c4713b;
-  --copper2: #e8854a;
-  --text: #f0ede8;
-  --text2: #888880;
-  --text3: #555550;
-  --green: #4ade80;
-  --red: #f87171;
-  --yellow: #fbbf24;
-  --blue: #60a5fa;
-  --radius: 8px;
-  --font: 'Outfit', sans-serif;
-  --mono: 'JetBrains Mono', monospace;
+/* ============================================================
+   CONFIG NOTE: All Supabase settings live in the <script> at the
+   bottom under "const CONFIG". If a column name in your tables is
+   different, change it there in one place. No terminal needed.
+   ============================================================ */
+:root{
+  --green:#1A3D28; --green-d:#152B1E; --green-l:#2D6A4F;
+  --accent:#C4713B;
+  --bg:#F7F5EF; --surface:#FFFFFF; --surface-2:#F1EFE8;
+  --ink:#1C2620; --ink-2:#5C6B62; --ink-3:#8A968E;
+  --line:#E4E0D6; --line-2:#D3CFC3;
+  --ok:#3B6D11; --ok-bg:#EAF3DE; --ok-br:#97C459;
+  --warn:#BA7517; --warn-bg:#FAEEDA; --warn-br:#EF9F27;
+  --bad:#A32D2D; --bad-bg:#FCEBEB; --bad-br:#F7C1C1;
+  --r:12px; --r-sm:8px;
 }
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; overflow-x: hidden; }
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Outfit',system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;-webkit-font-smoothing:antialiased}
+.serif{font-family:'DM Serif Display',Georgia,serif}
+input,select,button,textarea{font-family:inherit}
+a{color:inherit}
 
-/* ── SCROLLBAR ── */
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: var(--bg); }
-::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+/* ---------- Login ---------- */
+#login{position:fixed;inset:0;background:var(--green);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px}
+.login-card{background:var(--surface);border-radius:18px;padding:36px 32px;width:100%;max-width:380px}
+.login-mark{display:flex;align-items:center;gap:10px;margin-bottom:24px}
+.login-mark .m{width:34px;height:34px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.login-mark .t{font-size:17px;font-weight:500;color:var(--ink)}
+.login-h{font-size:22px;color:var(--ink);margin-bottom:5px}
+.login-s{font-size:13px;color:var(--ink-2);margin-bottom:24px}
+.fld{margin-bottom:14px}
+.fld label{display:block;font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);margin-bottom:6px}
+.fld input{width:100%;padding:11px 13px;border:1px solid var(--line-2);border-radius:var(--r-sm);font-size:14px;color:var(--ink);background:var(--bg);outline:none;transition:border-color .15s,box-shadow .15s}
+.fld input:focus{border-color:var(--green-l);box-shadow:0 0 0 3px rgba(45,106,79,.12)}
+.btn-primary{width:100%;padding:12px;background:var(--green);color:#fff;border:none;border-radius:var(--r-sm);font-size:14px;font-weight:500;cursor:pointer;transition:background .15s}
+.btn-primary:hover{background:var(--green-l)}
+.btn-primary:disabled{opacity:.6;cursor:not-allowed}
+.login-err{font-size:12px;color:var(--bad);margin-top:12px;display:none}
+.login-demo{margin-top:18px;padding-top:18px;border-top:1px solid var(--line);text-align:center}
+.login-demo a{font-size:12px;color:var(--green-l);cursor:pointer;font-weight:500}
+.login-demo a:hover{text-decoration:underline}
 
-/* ── LOGIN ── */
-#login-screen {
-  position: fixed; inset: 0; background: var(--bg);
-  display: flex; align-items: center; justify-content: center; z-index: 1000;
-}
-.login-box {
-  width: 100%; max-width: 400px; padding: 0 24px;
-}
-.login-logo {
-  text-align: center; margin-bottom: 40px;
-}
-.login-logo .wordmark {
-  font-size: 11px; letter-spacing: 0.3em; color: var(--text2);
-  text-transform: uppercase; font-family: var(--mono);
-}
-.login-logo .hammer-icon {
-  font-size: 32px; display: block; margin-bottom: 8px;
-}
-.login-title {
-  font-size: 22px; font-weight: 600; margin-bottom: 4px; text-align: center;
-}
-.login-sub {
-  font-size: 13px; color: var(--text2); text-align: center; margin-bottom: 32px;
-}
-.form-group { margin-bottom: 16px; }
-.form-group label {
-  display: block; font-size: 11px; letter-spacing: 0.1em;
-  text-transform: uppercase; color: var(--text2); margin-bottom: 6px;
-  font-family: var(--mono);
-}
-.form-group input {
-  width: 100%; background: var(--bg2); border: 1px solid var(--border2);
-  color: var(--text); padding: 12px 14px; border-radius: var(--radius);
-  font-family: var(--font); font-size: 14px; outline: none;
-  transition: border-color 0.2s;
-}
-.form-group input:focus { border-color: var(--copper); }
-.btn-login {
-  width: 100%; background: var(--copper); color: #fff; border: none;
-  padding: 13px; border-radius: var(--radius); font-size: 14px; font-weight: 600;
-  cursor: pointer; margin-top: 8px; transition: background 0.2s; font-family: var(--font);
-}
-.btn-login:hover { background: var(--copper2); }
-.login-error {
-  color: var(--red); font-size: 12px; text-align: center;
-  margin-top: 12px; display: none;
-}
-.demo-divider {
-  display: flex; align-items: center; gap: 12px; margin: 24px 0;
-}
-.demo-divider::before, .demo-divider::after {
-  content: ''; flex: 1; height: 1px; background: var(--border);
-}
-.demo-divider span { font-size: 11px; color: var(--text3); white-space: nowrap; }
-.demo-btns { display: flex; gap: 10px; }
-.btn-demo {
-  flex: 1; background: var(--bg2); border: 1px solid var(--border2);
-  color: var(--text2); padding: 11px; border-radius: var(--radius);
-  font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: var(--font);
-}
-.btn-demo:hover { border-color: var(--copper); color: var(--text); }
+/* ---------- App shell ---------- */
+#app{display:none}
+.topnav{background:var(--green);height:56px;padding:0 22px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.tn-l{display:flex;align-items:center;gap:10px}
+.tn-mark{width:28px;height:28px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px}
+.tn-word{color:#fff;font-weight:500;font-size:14px}
+.tn-bc{font-size:13px;color:#9DC9A8}
+.tn-bc .sep{color:#3A6347;margin:0 6px}.tn-bc .cur{color:#D8EDE0;font-weight:500}
+.tn-bc .lnk{cursor:pointer}.tn-bc .lnk:hover{color:#D8EDE0}
+.tn-r{display:flex;align-items:center;gap:14px}
+.demo-badge{font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#412402;background:#FAC775;padding:3px 9px;border-radius:100px}
+.sync{display:flex;align-items:center;gap:6px;font-size:11px;color:#7AB893}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:#52B788}
+.av{width:28px;height:28px;border-radius:50%;background:#235236;font-size:11px;color:#9DC9A8;font-weight:500;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.tn-menu{position:relative}
+.tn-dd{position:absolute;top:38px;right:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);min-width:160px;box-shadow:0 8px 24px rgba(0,0,0,.1);display:none;overflow:hidden;z-index:60}
+.tn-dd.open{display:block}
+.tn-dd-item{padding:10px 14px;font-size:13px;color:var(--ink);cursor:pointer}
+.tn-dd-item:hover{background:var(--surface-2)}
+.tn-dd-item.sub{font-size:11px;color:var(--ink-3);cursor:default;border-bottom:1px solid var(--line)}
 
-/* ── DASHBOARD ── */
-#dashboard { display: none; min-height: 100vh; }
+/* ---------- Tabs ---------- */
+.subtabs{background:var(--green-d);display:flex;padding:0 22px;gap:2px;overflow-x:auto}
+.subtab{padding:11px 15px;font-size:12px;font-weight:500;color:#7AB893;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:color .15s,border-color .15s}
+.subtab:hover{color:#D8EDE0}
+.subtab.act{color:#D8EDE0;border-bottom-color:var(--accent)}
 
-/* ── TOPBAR ── */
-.topbar {
-  height: 52px; background: var(--bg); border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; padding: 0 20px;
-  position: sticky; top: 0; z-index: 100;
-}
-.topbar-logo {
-  font-size: 11px; letter-spacing: 0.25em; font-family: var(--mono);
-  color: var(--copper); text-transform: uppercase; margin-right: auto;
-}
-.demo-badge {
-  background: rgba(251,191,36,0.15); color: var(--yellow);
-  border: 1px solid rgba(251,191,36,0.3); border-radius: 4px;
-  font-size: 10px; padding: 3px 8px; letter-spacing: 0.1em;
-  font-family: var(--mono); margin-right: 14px; display: none;
-}
-.topbar-user {
-  font-size: 12px; color: var(--text2); margin-right: 16px;
-  font-family: var(--mono);
-}
-.btn-logout {
-  background: none; border: 1px solid var(--border2); color: var(--text2);
-  padding: 6px 12px; border-radius: 6px; font-size: 11px; cursor: pointer;
-  transition: all 0.2s; font-family: var(--font);
-}
-.btn-logout:hover { border-color: var(--copper); color: var(--text); }
+/* ---------- Page ---------- */
+.page{max-width:1080px;margin:0 auto;padding:22px}
+.hidden{display:none!important}
+.muted{color:var(--ink-2)}
+.sec-t{font-size:15px;font-weight:500;color:var(--ink);margin-bottom:3px}
+.sec-s{font-size:12px;color:var(--ink-2);margin-bottom:14px}
 
-/* ── LAYOUT ── */
-.layout { display: flex; }
-.sidebar {
-  width: 220px; min-height: calc(100vh - 52px); background: var(--bg);
-  border-right: 1px solid var(--border); padding: 20px 12px;
-  position: sticky; top: 52px; height: calc(100vh - 52px);
-  overflow-y: auto; flex-shrink: 0;
-}
-.sidebar-section { margin-bottom: 24px; }
-.sidebar-label {
-  font-size: 9px; letter-spacing: 0.2em; color: var(--text3);
-  text-transform: uppercase; font-family: var(--mono); padding: 0 8px;
-  margin-bottom: 6px;
-}
-.nav-item {
-  display: flex; align-items: center; gap: 9px; padding: 8px 10px;
-  border-radius: 6px; color: var(--text2); cursor: pointer;
-  font-size: 13px; transition: all 0.15s; margin-bottom: 2px;
-}
-.nav-item:hover { background: var(--bg2); color: var(--text); }
-.nav-item.active { background: rgba(196,113,59,0.12); color: var(--copper); }
-.nav-item .icon { width: 16px; text-align: center; font-size: 14px; }
-.main { flex: 1; padding: 28px; overflow-x: hidden; }
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;margin-bottom:13px}
+.card.gn{background:var(--green);border-color:transparent}
+.card.gs{background:var(--ok-bg);border-color:var(--ok-br)}
+.card.sur{background:var(--surface-2);border-color:transparent}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.grid4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px}
+@media(max-width:720px){.grid3,.grid4{grid-template-columns:repeat(2,minmax(0,1fr))}.grid2{grid-template-columns:1fr}}
 
-/* ── VIEWS ── */
-.view { display: none; }
-.view.active { display: block; }
+.lbl{display:block;font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-2);margin-bottom:8px}
+.gn .lbl{color:#7AB893}.gs .lbl{color:var(--ok)}
+.num{font-size:24px;font-weight:500;line-height:1;color:var(--ink)}
+.gn .num{color:#fff}.gs .num{color:#173404}
+.sub{font-size:11px;color:var(--ink-2);margin-top:6px}
+.gn .sub{color:#9DC9A8}.gs .sub{color:var(--ok)}
+.delta{display:inline-flex;align-items:center;font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px}
+.d-up{color:#173404;background:#C0DD97}.d-dn{color:#501313;background:#F7C1C1}
 
-/* ── PAGE HEADER ── */
-.page-header { margin-bottom: 28px; }
-.page-title { font-size: 22px; font-weight: 600; }
-.page-sub { font-size: 13px; color: var(--text2); margin-top: 4px; }
+.chip{font-size:10px;font-weight:600;padding:3px 9px;border-radius:100px;display:inline-block}
+.chip-on{color:#173404;background:#C0DD97}
+.chip-at{color:#412402;background:#FAC775}
+.chip-bh{color:#501313;background:#F7C1C1}
+.trade{font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ok);background:var(--ok-bg);padding:3px 9px;border-radius:100px;border:1px solid var(--ok-br)}
 
-/* ── STAT CARDS ── */
-.stat-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 14px; margin-bottom: 24px;
-}
-.stat-card {
-  background: var(--bg2); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 18px;
-}
-.stat-label {
-  font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
-  color: var(--text2); font-family: var(--mono); margin-bottom: 10px;
-}
-.stat-val {
-  font-size: 26px; font-weight: 700; font-family: var(--mono); line-height: 1;
-}
-.stat-val.green { color: var(--green); }
-.stat-val.copper { color: var(--copper); }
-.stat-val.blue { color: var(--blue); }
-.stat-change {
-  font-size: 11px; color: var(--text3); margin-top: 6px;
-}
+/* client cards */
+.cc{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:17px;cursor:pointer;transition:border-color .15s,transform .1s}
+.cc:hover{border-color:var(--line-2);transform:translateY(-1px)}
+.cc.at{border-left:3px solid var(--warn-br)}
+.cc.bh{border-left:3px solid #E24B4A}
+.cc-hd{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:13px}
+.cc-n{font-size:14px;font-weight:500;color:var(--ink);margin-bottom:4px}
+.cc-m{font-size:11px;color:var(--ink-2);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.cc-ring{display:flex;align-items:center;gap:11px;padding:11px;background:var(--surface-2);border-radius:var(--r-sm);margin-bottom:13px}
+.cc-ring-a{font-size:12px;font-weight:500;color:var(--ink)}
+.cc-ring-p{font-size:10px;color:var(--ink-2);margin-top:2px}
+.cc-mini{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:11px}
+.cc-mini-l{font-size:8px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-2);margin-bottom:2px}
+.cc-mini-v{font-size:14px;font-weight:500;color:var(--ink)}
+.cc-f{font-size:10px;color:var(--ink-2);padding-top:10px;border-top:1px solid var(--line);display:flex;justify-content:space-between}
 
-/* ── PANELS ── */
-.panel {
-  background: var(--bg2); border: 1px solid var(--border);
-  border-radius: var(--radius); margin-bottom: 20px;
-}
-.panel-header {
-  padding: 16px 20px; border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; justify-content: space-between;
-}
-.panel-title { font-size: 13px; font-weight: 600; }
-.panel-body { padding: 20px; }
+/* metric cards (client view) */
+.mc{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:13px 15px}
+.mc.gn{background:var(--green);border-color:transparent}
+.mc-l{font-size:9px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-2);margin-bottom:7px}
+.mc.gn .mc-l{color:#7AB893}
+.mc-v{font-size:19px;font-weight:500;color:var(--ink);line-height:1}
+.mc.gn .mc-v{color:#fff}
+.mc-m{display:flex;align-items:center;gap:5px;margin-top:5px}
+.mc-s{font-size:10px;color:var(--ink-2)}.mc.gn .mc-s{color:#7AB893}
 
-/* ── TABLE ── */
-.table-wrap { overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-th {
-  text-align: left; font-size: 10px; letter-spacing: 0.1em;
-  color: var(--text3); font-family: var(--mono); text-transform: uppercase;
-  padding: 0 12px 12px; font-weight: 500;
-}
-td { padding: 11px 12px; border-top: 1px solid var(--border); }
-tr:hover td { background: rgba(255,255,255,0.02); }
-.badge {
-  display: inline-block; padding: 3px 8px; border-radius: 4px;
-  font-size: 10px; font-family: var(--mono); letter-spacing: 0.05em;
-}
-.badge-green { background: rgba(74,222,128,0.1); color: var(--green); }
-.badge-yellow { background: rgba(251,191,36,0.1); color: var(--yellow); }
-.badge-red { background: rgba(248,113,113,0.1); color: var(--red); }
-.badge-blue { background: rgba(96,165,250,0.1); color: var(--blue); }
-.badge-gray { background: rgba(255,255,255,0.05); color: var(--text2); }
+.back{background:none;border:1px solid var(--line-2);border-radius:var(--r-sm);padding:7px 14px;cursor:pointer;font-size:12px;color:var(--ink-2);margin-bottom:14px;display:inline-flex;align-items:center;gap:5px}
+.back:hover{background:var(--surface-2)}
 
-/* ── CHART ── */
-.chart-wrap { position: relative; height: 220px; }
+.row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-top:1px solid var(--line)}
+.row:first-child{border-top:none}
 
-/* ── ADMIN CLIENT TABLE ── */
-.client-row { cursor: pointer; }
-.client-row:hover td { background: rgba(196,113,59,0.05); }
+/* tables */
+.th{font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)}
+.as{font-size:10px;font-weight:600;padding:3px 8px;border-radius:4px}
+.as-cf{color:#3B6D11;background:#EAF3DE}.as-cl{color:#173404;background:#C0DD97}.as-ns{color:#791F1F;background:#F7C1C1}.as-pe{color:#5C6B62;background:#F1EFE8}
 
-/* ── PROGRESS BAR ── */
-.progress-bar {
-  height: 4px; background: var(--border); border-radius: 2px; margin-top: 8px;
-}
-.progress-fill {
-  height: 100%; border-radius: 2px; background: var(--copper);
-  transition: width 0.5s;
-}
+/* budget inputs */
+.inp{background:var(--bg);border:1px solid var(--line-2);border-radius:var(--r-sm);padding:8px 11px;font-size:14px;color:var(--ink);width:100%;outline:none;transition:border-color .15s,box-shadow .15s}
+.inp:focus{border-color:var(--green-l);box-shadow:0 0 0 3px rgba(45,106,79,.1)}
+.inp.serif{font-family:'DM Serif Display',Georgia,serif}
+input[type=range]{accent-color:var(--green-l);width:100%;height:5px}
+.delbtn{background:none;border:none;color:var(--ink-3);cursor:pointer;font-size:18px;padding:2px 5px;border-radius:5px;line-height:1}
+.delbtn:hover{color:var(--bad);background:var(--bad-bg)}
+.addbtn{background:none;border:1px dashed var(--line-2);border-radius:var(--r-sm);padding:9px 14px;cursor:pointer;font-size:12px;color:var(--ink-2);width:100%;margin-top:10px}
+.addbtn:hover{border-color:var(--green-l);color:var(--green-l)}
+.savebtn{background:var(--green-l);border:none;border-radius:var(--r-sm);padding:8px 16px;cursor:pointer;font-size:12px;color:#fff;font-weight:500}
+.savebtn:hover{background:var(--green)}
+.prog-wrap{background:var(--surface-2);border-radius:100px;height:7px;overflow:hidden;margin:5px 0 9px}
+.prog-fill{height:100%;border-radius:100px;background:var(--green-l)}
+.alert{padding:10px 13px;border-radius:var(--r-sm);font-size:12px;display:flex;gap:8px;align-items:flex-start}
+.alert-warn{background:var(--warn-bg);border:1px solid var(--warn-br);color:#633806}
+.alert-ok{background:var(--ok-bg);border:1px solid var(--ok-br);color:var(--ok)}
+.alert-bad{background:var(--bad-bg);border:1px solid var(--bad-br);color:#791F1F}
 
-/* ── APPT LIST ── */
-.appt-item {
-  display: flex; align-items: center; gap: 14px;
-  padding: 10px 0; border-bottom: 1px solid var(--border);
-}
-.appt-item:last-child { border-bottom: none; }
-.appt-time {
-  font-family: var(--mono); font-size: 11px; color: var(--text2);
-  min-width: 90px;
-}
-.appt-name { font-size: 13px; flex: 1; }
-
-/* ── EMPTY STATE ── */
-.empty {
-  text-align: center; padding: 48px 20px; color: var(--text3);
-  font-size: 13px;
-}
-.empty-icon { font-size: 28px; margin-bottom: 10px; }
-
-/* ── LOADING ── */
-.loading {
-  display: flex; align-items: center; justify-content: center;
-  padding: 60px; color: var(--text3); gap: 10px; font-size: 13px;
-}
-.spinner {
-  width: 18px; height: 18px; border: 2px solid var(--border2);
-  border-top-color: var(--copper); border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* ── BTN ── */
-.btn {
-  background: var(--copper); color: #fff; border: none; padding: 9px 16px;
-  border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;
-  transition: background 0.2s; font-family: var(--font);
-}
-.btn:hover { background: var(--copper2); }
-.btn-sm { padding: 6px 12px; font-size: 11px; }
-.btn-ghost {
-  background: none; border: 1px solid var(--border2); color: var(--text2);
-}
-.btn-ghost:hover { border-color: var(--copper); color: var(--text); background: none; }
-
-/* ── MODAL ── */
-.modal-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.7);
-  display: flex; align-items: center; justify-content: center;
-  z-index: 200; display: none;
-}
-.modal {
-  background: var(--bg2); border: 1px solid var(--border2);
-  border-radius: 10px; padding: 28px; width: 100%; max-width: 440px;
-  max-height: 85vh; overflow-y: auto;
-}
-.modal-title { font-size: 16px; font-weight: 600; margin-bottom: 20px; }
-.modal input, .modal select, .modal textarea {
-  width: 100%; background: var(--bg); border: 1px solid var(--border2);
-  color: var(--text); padding: 10px 12px; border-radius: 6px;
-  font-family: var(--font); font-size: 13px; outline: none;
-  margin-bottom: 12px;
-}
-.modal input:focus, .modal select:focus { border-color: var(--copper); }
-.modal label {
-  font-size: 11px; color: var(--text2); display: block;
-  margin-bottom: 4px; font-family: var(--mono);
-}
-.modal-actions { display: flex; gap: 10px; margin-top: 8px; }
-
-/* ── ROI CALC ── */
-.roi-result {
-  background: rgba(196,113,59,0.1); border: 1px solid rgba(196,113,59,0.2);
-  border-radius: var(--radius); padding: 16px; margin-top: 16px;
-}
-.roi-row {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 4px 0; font-size: 13px;
-}
-.roi-row.big .roi-val { font-size: 20px; color: var(--green); font-family: var(--mono); }
-
-/* ── TICKER ── */
-.ticker {
-  background: var(--bg2); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 12px 20px;
-  display: flex; align-items: center; gap: 20px;
-  overflow: hidden; margin-bottom: 24px;
-}
-.ticker-label {
-  font-size: 10px; letter-spacing: 0.15em; color: var(--copper);
-  text-transform: uppercase; font-family: var(--mono); white-space: nowrap;
-}
-.ticker-items {
-  display: flex; gap: 32px; animation: scroll 30s linear infinite;
-  white-space: nowrap;
-}
-@keyframes scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-.ticker-item { font-size: 12px; color: var(--text2); font-family: var(--mono); }
-.ticker-item span { color: var(--green); }
-
-/* ── RANGE BUTTONS ── */
-.range-btn.active {
-  background: rgba(196,113,59,0.15); border-color: var(--copper); color: var(--copper);
-}
-
-/* ── RESPONSIVE ── */
-@media (max-width: 768px) {
-  .sidebar { display: none; }
-  .main { padding: 16px; }
-  .stat-grid { grid-template-columns: repeat(2, 1fr); }
-}
+.empty{text-align:center;padding:50px 20px;color:var(--ink-2)}
+.empty .ico{font-size:34px;margin-bottom:10px;opacity:.4}
+.spin{width:30px;height:30px;border:3px solid var(--line);border-top-color:var(--green-l);border-radius:50%;animation:sp .7s linear infinite;margin:50px auto}
+@keyframes sp{to{transform:rotate(360deg)}}
+.save-toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--green);color:#fff;padding:10px 20px;border-radius:100px;font-size:13px;opacity:0;transition:transform .3s,opacity .3s;z-index:200}
+.save-toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 </style>
 </head>
 <body>
 
-<!-- ══════════════ LOGIN ══════════════ -->
-<div id="login-screen">
-  <div class="login-box">
-    <div class="login-logo">
-      <span class="hammer-icon">🔨</span>
-      <div class="wordmark">The Hammer List</div>
-    </div>
-    <div class="login-title">Client Portal</div>
-    <div class="login-sub">Sign in to view your campaign results</div>
-    <div class="form-group">
-      <label>Email</label>
-      <input type="email" id="email-input" placeholder="you@company.com" autocomplete="email">
-    </div>
-    <div class="form-group">
-      <label>Password</label>
-      <input type="password" id="pass-input" placeholder="••••••••" autocomplete="current-password">
-    </div>
-    <button class="btn-login" onclick="doLogin()">Sign In</button>
-    <div class="login-error" id="login-error">Invalid email or password.</div>
-    <div class="demo-divider"><span>or continue with demo</span></div>
-    <div class="demo-btns">
-      <button class="btn-demo" onclick="loadDemo('contractor')">👷 View as Contractor</button>
-      <button class="btn-demo" onclick="loadDemo('admin')">⚙️ View as Admin</button>
-    </div>
+<!-- ============ LOGIN ============ -->
+<div id="login">
+  <div class="login-card">
+    <div class="login-mark"><div class="m">🔨</div><div class="t">The Hammer List</div></div>
+    <div class="login-h serif">Welcome back</div>
+    <div class="login-s">Sign in to your growth dashboard</div>
+    <div class="fld"><label>Email</label><input type="email" id="li-email" placeholder="you@company.com" autocomplete="email"></div>
+    <div class="fld"><label>Password</label><input type="password" id="li-pass" placeholder="••••••••" autocomplete="current-password"></div>
+    <button class="btn-primary" id="li-btn" onclick="doLogin()">Sign in</button>
+    <div class="login-err" id="li-err"></div>
+    <div class="login-demo"><a onclick="enterDemo()">View interactive demo →</a></div>
   </div>
 </div>
 
-<!-- ══════════════ DASHBOARD ══════════════ -->
-<div id="dashboard">
-  <!-- Topbar -->
-  <div class="topbar">
-    <div class="topbar-logo">⬛ The Hammer List</div>
-    <div class="demo-badge" id="demo-badge">DEMO MODE</div>
-    <div class="topbar-user" id="topbar-user"></div>
-    <button class="btn-logout" onclick="doLogout()">Sign Out</button>
-  </div>
-
-  <div class="layout">
-    <!-- Sidebar -->
-    <div class="sidebar">
-      <div class="sidebar-section" id="nav-client-section">
-        <div class="sidebar-label">Your Dashboard</div>
-        <div class="nav-item active" onclick="showView('overview')">
-          <span class="icon">📊</span> Overview
-        </div>
-        <div class="nav-item" onclick="showView('appointments')">
-          <span class="icon">📅</span> Appointments
-        </div>
-        <div class="nav-item" onclick="showView('jobs')">
-          <span class="icon">💰</span> Closed Jobs
-        </div>
-        <div class="nav-item" onclick="showView('roi')">
-          <span class="icon">🧮</span> ROI Calculator
-        </div>
-      </div>
-      <div class="sidebar-section" id="nav-admin-section" style="display:none">
-        <div class="sidebar-label">Admin</div>
-        <div class="nav-item" onclick="showView('admin-clients')">
-          <span class="icon">👥</span> All Clients
-        </div>
-        <div class="nav-item" onclick="showView('admin-overview')">
-          <span class="icon">🏢</span> Portfolio
+<!-- ============ APP ============ -->
+<div id="app">
+  <div class="topnav">
+    <div class="tn-l">
+      <div class="tn-mark">🔨</div>
+      <div class="tn-word">The Hammer List</div>
+    </div>
+    <div class="tn-bc" id="bc"></div>
+    <div class="tn-r">
+      <span class="demo-badge hidden" id="demo-badge">Demo</span>
+      <div class="sync"><div class="sync-dot"></div><span id="sync-txt">Synced</span></div>
+      <div class="tn-menu">
+        <div class="av" id="av" onclick="toggleMenu()">U</div>
+        <div class="tn-dd" id="menu">
+          <div class="tn-dd-item sub" id="menu-email">user</div>
+          <div class="tn-dd-item" onclick="doLogout()">Sign out</div>
         </div>
       </div>
     </div>
-
-    <!-- Main -->
-    <div class="main">
-
-      <!-- ── OVERVIEW VIEW ── -->
-      <div class="view active" id="view-overview">
-        <div class="page-header">
-          <div class="page-title" id="overview-title">Loading...</div>
-          <div class="page-sub" id="overview-sub"></div>
-        </div>
-
-        <div class="ticker" id="ticker-bar" style="display:none">
-          <div class="ticker-label">Live</div>
-          <div class="ticker-items" id="ticker-content"></div>
-        </div>
-
-        <div class="stat-grid" id="stat-grid">
-          <div class="loading"><div class="spinner"></div> Fetching data...</div>
-        </div>
-
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
-          <div class="panel">
-            <div class="panel-header">
-              <div class="panel-title">Appointments This Month</div>
-            </div>
-            <div class="panel-body">
-              <div class="chart-wrap"><canvas id="chart-appts"></canvas></div>
-            </div>
-          </div>
-          <div class="panel">
-            <div class="panel-header">
-              <div class="panel-title">Ad Spend vs Leads</div>
-            </div>
-            <div class="panel-body">
-              <div class="chart-wrap"><canvas id="chart-meta"></canvas></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="panel" style="margin-top:20px">
-          <div class="panel-header">
-            <div class="panel-title">Recent Appointments</div>
-          </div>
-          <div class="panel-body" id="appt-list">
-            <div class="loading"><div class="spinner"></div></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── APPOINTMENTS VIEW ── -->
-      <div class="view" id="view-appointments">
-        <div class="page-header">
-          <div class="page-title">Appointments</div>
-          <div class="page-sub">All booked appointments from your campaigns</div>
-        </div>
-        <div class="panel">
-          <div class="panel-body table-wrap" id="appts-table-wrap">
-            <div class="loading"><div class="spinner"></div></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── JOBS VIEW ── -->
-      <div class="view" id="view-jobs">
-        <div class="page-header" style="display:flex;align-items:center;justify-content:space-between">
-          <div>
-            <div class="page-title">Closed Jobs</div>
-            <div class="page-sub">Revenue attributed to Hammer List appointments</div>
-          </div>
-          <button class="btn" onclick="openAddJob()">+ Add Job</button>
-        </div>
-        <div class="panel">
-          <div class="panel-body table-wrap" id="jobs-table-wrap">
-            <div class="loading"><div class="spinner"></div></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── ROI CALCULATOR ── -->
-      <div class="view" id="view-roi">
-        <div class="page-header">
-          <div class="page-title">ROI Calculator</div>
-          <div class="page-sub">See your return on ad spend</div>
-        </div>
-        <div class="panel" style="max-width:480px">
-          <div class="panel-body">
-            <div class="form-group">
-              <label>Monthly Retainer ($)</label>
-              <input type="number" id="roi-retainer" value="2000" oninput="calcRoi()">
-            </div>
-            <div class="form-group">
-              <label>Monthly Ad Spend ($)</label>
-              <input type="number" id="roi-spend" value="1000" oninput="calcRoi()">
-            </div>
-            <div class="form-group">
-              <label>Appointments Booked</label>
-              <input type="number" id="roi-appts" value="15" oninput="calcRoi()">
-            </div>
-            <div class="form-group">
-              <label>Close Rate (%)</label>
-              <input type="number" id="roi-close" value="40" oninput="calcRoi()">
-            </div>
-            <div class="form-group">
-              <label>Avg Job Value ($)</label>
-              <input type="number" id="roi-jobval" value="8500" oninput="calcRoi()">
-            </div>
-            <div class="roi-result">
-              <div class="roi-row"><span>Jobs Closed</span><span id="roi-jobs" class="roi-val" style="font-family:var(--mono)">6</span></div>
-              <div class="roi-row"><span>Revenue Generated</span><span id="roi-revenue" class="roi-val" style="font-family:var(--mono)">$51,000</span></div>
-              <div class="roi-row"><span>Total Investment</span><span id="roi-invest" class="roi-val" style="font-family:var(--mono)">$3,000</span></div>
-              <div class="roi-row big" style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(196,113,59,0.2)">
-                <span style="font-weight:600">Net ROI</span>
-                <span id="roi-net" class="roi-val">17x</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── ADMIN: ALL CLIENTS ── -->
-      <div class="view" id="view-admin-clients">
-        <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
-          <div>
-            <div class="page-title">All Clients</div>
-            <div class="page-sub">Portfolio overview — click any client to drill in</div>
-          </div>
-          <div style="display:flex;gap:6px">
-            <button class="btn btn-ghost btn-sm range-btn active" onclick="setRange('all', this)">All Time</button>
-            <button class="btn btn-ghost btn-sm range-btn" onclick="setRange('month', this)">This Month</button>
-            <button class="btn btn-ghost btn-sm range-btn" onclick="setRange('30', this)">Last 30 Days</button>
-          </div>
-        </div>
-        <div class="panel">
-          <div class="panel-body table-wrap" id="admin-clients-wrap">
-            <div class="loading"><div class="spinner"></div></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── ADMIN: PORTFOLIO ── -->
-      <div class="view" id="view-admin-overview">
-        <div class="page-header">
-          <div class="page-title">Portfolio Overview</div>
-          <div class="page-sub">Aggregate metrics across all active clients</div>
-        </div>
-        <div class="stat-grid" id="admin-stat-grid">
-          <div class="loading"><div class="spinner"></div></div>
-        </div>
-        <div class="panel">
-          <div class="panel-header"><div class="panel-title">Revenue by Client</div></div>
-          <div class="panel-body">
-            <div class="chart-wrap"><canvas id="chart-admin"></canvas></div>
-          </div>
-        </div>
-      </div>
-
-    </div><!-- /main -->
-  </div><!-- /layout -->
-</div><!-- /dashboard -->
-
-<!-- ── ADD JOB MODAL ── -->
-<div class="modal-overlay" id="job-modal">
-  <div class="modal">
-    <div class="modal-title">Add Closed Job</div>
-    <label>Client Name</label>
-    <input type="text" id="job-client" placeholder="e.g. John Smith">
-    <label>Job Description</label>
-    <input type="text" id="job-desc" placeholder="e.g. Stamped concrete driveway">
-    <label>Job Value ($)</label>
-    <input type="number" id="job-val" placeholder="8500">
-    <label>Date Closed</label>
-    <input type="date" id="job-date">
-    <div class="modal-actions">
-      <button class="btn" onclick="submitJob()">Save Job</button>
-      <button class="btn btn-ghost" onclick="closeModal('job-modal')">Cancel</button>
-    </div>
   </div>
+
+  <div class="subtabs" id="subtabs"></div>
+
+  <div id="view" class="page"><div class="spin"></div></div>
 </div>
 
+<div class="save-toast" id="toast">Saved</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-// ═══════════════════════════════════════════════
-// CONFIG
-// ═══════════════════════════════════════════════
-const SUPABASE_URL = 'https://zaxowlcsraiknvvxddyg.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_Xxq_FQ5FwSz5QrvGpN_HKQ_ai_guQ2n';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+/* ════════════════════════════════════════════════════════════
+   CONFIG — the only place you edit if anything changes.
+   Publishable (anon) key only — safe to expose. RLS does security.
+   ════════════════════════════════════════════════════════════ */
+const CONFIG = {
+  url: 'https://zaxowlcsraiknvvxddyg.supabase.co',
+  anonKey: 'sb_publishable_Xxq_FQ5FwSz5QrvGpN_HKQ_ai_guQ2n',
+  // Admin emails see ALL clients. Put your own login email here.
+  adminEmails: ['admin@thehammerlist.com'],
+  // Table + column names — change here if yours differ.
+  tables: {
+    clients: 'clients',
+    metrics: 'metrics',
+    appointments: 'appointments',
+    closedJobs: 'closed_jobs',
+    budget: 'budget_data'
+  },
+  cols: {
+    apptId: 'ghl_appt_id',
+    apptAt: 'appt_at',
+    spend: 'spend'
+  },
+  guarantee: 15
+};
 
-let CURRENT_USER = null;
-let CURRENT_CLIENT = null;
-let IS_ADMIN = false;
-let IS_DEMO = false;
-let charts = {};
+const sb = window.supabase.createClient(CONFIG.url, CONFIG.anonKey);
 
-// ═══════════════════════════════════════════════
-// GUEST / DEMO DATA — anonymized fake clients
-// ═══════════════════════════════════════════════
+/* ---------- session state ---------- */
+const S = {
+  demo:false, isAdmin:false, user:null,
+  clients:[], activeClientId:null, tab:'overview', budget:null
+};
 
-// Seed-based random so numbers are consistent per session but vary between visits
-const SESSION_SEED = Math.floor(Date.now() / 3600000); // changes every hour
-function seededRand(seed, min, max) {
-  const x = Math.sin(seed) * 10000;
-  return Math.floor((x - Math.floor(x)) * (max - min + 1)) + min;
+const MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const TODAY = new Date();
+const DPM = new Date(TODAY.getFullYear(),TODAY.getMonth()+1,0).getDate();
+const DAY = TODAY.getDate();
+
+/* ---------- formatters ---------- */
+const f$=n=>{n=Number(n)||0;const a=Math.abs(n),s=n<0?'-':'';if(a>=100000)return s+'$'+Math.round(a/1000)+'k';if(a>=1000)return s+'$'+(a/1000).toFixed(1)+'k';return s+'$'+Math.round(a);};
+const fN=n=>(Number(n)||0).toLocaleString();
+const fp=n=>Math.round(Number(n)||0)+'%';
+const el=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function toast(msg){const t=el('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1800);}
+function deltaHtml(cur,prev,inverse){
+  if(!prev||prev===0)return '';
+  const v=Math.round((cur-prev)/Math.abs(prev)*100);
+  const good=inverse?v<0:v>=0;
+  return `<span class="delta ${good?'d-up':'d-dn'}">${v>=0?'↑':'↓'} ${Math.abs(v)}%</span>`;
 }
 
-const GUEST_CLIENTS = [
-  { id: 'g1',  trade: 'Concrete',          city: 'Phoenix, AZ',       region: 'Southwest' },
-  { id: 'g2',  trade: 'HVAC',              city: 'Nashville, TN',     region: 'Southeast' },
-  { id: 'g3',  trade: 'Decking',           city: 'Denver, CO',        region: 'Mountain' },
-  { id: 'g4',  trade: 'Turfing',           city: 'Scottsdale, AZ',    region: 'Southwest' },
-  { id: 'g5',  trade: 'Kitchen & Bath',    city: 'Charlotte, NC',     region: 'Southeast' },
-  { id: 'g6',  trade: 'Roofing',           city: 'Columbus, OH',      region: 'Midwest' },
-  { id: 'g7',  trade: 'Cabinet Refinishing', city: 'Portland, OR',    region: 'Northwest' },
-  { id: 'g8',  trade: 'Concrete',          city: 'Dallas, TX',        region: 'South' },
-  { id: 'g9',  trade: 'HVAC',              city: 'Minneapolis, MN',   region: 'Midwest' },
-  { id: 'g10', trade: 'Decking',           city: 'Boise, ID',         region: 'Northwest' },
-  { id: 'g11', trade: 'Turfing',           city: 'Sacramento, CA',    region: 'West' },
-  { id: 'g12', trade: 'Basement Remodel',  city: 'Pittsburgh, PA',    region: 'Northeast' },
-  { id: 'g13', trade: 'Roofing',           city: 'Kansas City, MO',   region: 'Midwest' },
-  { id: 'g14', trade: 'Kitchen & Bath',    city: 'Tampa, FL',         region: 'Southeast' },
-  { id: 'g15', trade: 'Concrete',          city: 'Raleigh, NC',       region: 'Southeast' },
-  { id: 'g16', trade: 'HVAC',              city: 'Salt Lake City, UT', region: 'Mountain' },
-  { id: 'g17', trade: 'Cabinet Refinishing', city: 'Austin, TX',      region: 'South' },
-  { id: 'g18', trade: 'Decking',           city: 'Spokane, WA',       region: 'Northwest' },
-  { id: 'g19', trade: 'Turfing',           city: 'Albuquerque, NM',   region: 'Southwest' },
-  { id: 'g20', trade: 'Basement Remodel',  city: 'Indianapolis, IN',  region: 'Midwest' },
-];
+/* ════════════════════════════════════════════════════════════
+   AUTH
+   ════════════════════════════════════════════════════════════ */
+async function init(){
+  const {data:{session}} = await sb.auth.getSession();
+  if(session){ await onLogin(session.user); }
+}
+async function doLogin(){
+  const email=el('li-email').value.trim(), pass=el('li-pass').value;
+  const errEl=el('li-err'), btn=el('li-btn');
+  errEl.style.display='none';
+  if(!email||!pass){ errEl.textContent='Enter your email and password.'; errEl.style.display='block'; return; }
+  btn.disabled=true; btn.textContent='Signing in…';
+  const {data,error}=await sb.auth.signInWithPassword({email,password:pass});
+  btn.disabled=false; btn.textContent='Sign in';
+  if(error){ errEl.textContent=error.message||'Could not sign in. Check your details.'; errEl.style.display='block'; return; }
+  await onLogin(data.user);
+}
+async function doLogout(){
+  if(!S.demo) await sb.auth.signOut();
+  location.reload();
+}
+async function onLogin(user){
+  S.user=user; S.demo=false;
+  el('login').style.display='none'; el('app').style.display='block';
+  el('demo-badge').classList.add('hidden');
+  el('av').textContent=(user.email||'U')[0].toUpperCase();
+  el('menu-email').textContent=user.email||'';
+  S.isAdmin = CONFIG.adminEmails.map(e=>e.toLowerCase()).includes((user.email||'').toLowerCase());
+  await loadData();
+}
 
-function getGuestMetrics(id) {
-  const i = parseInt(id.replace('g',''));
-  const s = SESSION_SEED + i * 137;
-  const booked = seededRand(s, 22, 32);
-  const shown  = Math.round(booked * (seededRand(s+1, 78, 88) / 100));
+/* ════════════════════════════════════════════════════════════
+   DEMO MODE — no real client or personal data, ever.
+   ════════════════════════════════════════════════════════════ */
+function enterDemo(){
+  S.demo=true; S.isAdmin=true; S.user={email:'demo@thehammerlist.com'};
+  el('login').style.display='none'; el('app').style.display='block';
+  el('demo-badge').classList.remove('hidden');
+  el('av').textContent='D'; el('menu-email').textContent='Demo mode';
+  S.clients = demoClients();
+  S.activeClientId=null; S.tab='overview';
+  renderShell(); routeAdminOrClient();
+}
+function demoClients(){
+  // fictional, isolated cities, demo revenue > $60k/mo
+  const mk=(id,name,trade,city,owner,appts,spend,closed,rev,avgJob,cr)=>({
+    id,name,trade,city,owner,
+    appts,spend,closed,revenue:rev,avgJob,closeRate:cr,
+    prev:{appts:Math.round(appts*.82),spend:Math.round(spend*.9),closed:Math.max(1,closed-1),revenue:Math.round(rev*.85)},
+    appointments:demoAppts(trade,appts),
+    weekly:demoWeekly(appts,spend),
+    campaigns:demoCampaigns(trade,spend,appts)
+  });
+  return [
+    mk('d1','Summit Edge Concrete','Concrete','Kalispell, MT','Dave M.',13,2100,5,64000,12800,.38),
+    mk('d2','Brightway Comfort','HVAC','Bismarck, ND','Janet R.',16,2450,6,68400,11400,.37),
+    mk('d3','GreenScape Pro','Turfing','Bend, OR','Carlos V.',21,2600,8,96000,12000,.38)
+  ];
+}
+function demoAppts(trade,n){
+  const types={Concrete:['Driveway','Stamped patio','Retaining wall','Flatwork'],HVAC:['AC replacement','Furnace install','Mini split','Service call'],Turfing:['Turf install','Pavers','Putting green','Artificial grass']}[trade]||['Service'];
+  const first=['James','Linda','Tom','Sarah','Derek','Patricia','Carl','Donna','Frank','Beverly','Steven','Nancy','Brian','Karen','Mike'];
+  const sts=['cf','cf','cl','cf','ns','cf','cl','pe'];
+  const out=[];
+  for(let i=0;i<Math.min(n,8);i++){
+    const d=new Date(TODAY); d.setDate(DAY-i);
+    out.push({date:MN[d.getMonth()]+' '+d.getDate(),name:first[i%first.length]+' '+String.fromCharCode(65+i)+'.',type:types[i%types.length],status:sts[i%sts.length]});
+  }
+  return out;
+}
+function demoWeekly(appts,spend){
+  const w=[.22,.3,.28,.2];
+  return w.map((p,i)=>({w:'Wk '+(i+1),a:Math.round(appts*p),s:Math.round(spend*p)}));
+}
+function demoCampaigns(trade,spend,appts){
+  const names={Concrete:['Driveway leads','Stamped concrete','Retaining wall'],HVAC:['AC replacement','HVAC service','Mini split'],Turfing:['Turf install','Pavers','Putting greens']}[trade]||['Campaign A','Campaign B','Campaign C'];
+  const sp=[.5,.32,.18], ap=[.55,.3,.15];
+  return names.map((n,i)=>({n,s:Math.round(spend*sp[i]),a:Math.max(1,Math.round(appts*ap[i]))}));
+}
+
+/* ════════════════════════════════════════════════════════════
+   LIVE DATA LOAD
+   ════════════════════════════════════════════════════════════ */
+async function loadData(){
+  el('view').innerHTML='<div class="spin"></div>';
+  try{
+    const {data:clients,error} = await sb.from(CONFIG.tables.clients).select('*');
+    if(error) throw error;
+    const list = clients||[];
+    const enriched = [];
+    for(const c of list){
+      enriched.push(await enrichClient(c));
+    }
+    S.clients = enriched;
+    // non-admin with exactly one client → jump straight to their view
+    if(!S.isAdmin && enriched.length===1){ S.activeClientId=enriched[0].id; S.tab='overview'; }
+    else { S.activeClientId=null; S.tab='overview'; }
+    renderShell();
+    routeAdminOrClient();
+  }catch(e){
+    el('view').innerHTML=`<div class="empty"><div class="ico">⚠</div><div>Couldn't load your data.<br><span class="muted" style="font-size:12px">${esc(e.message||e)}</span></div></div>`;
+  }
+}
+
+async function enrichClient(c){
+  const cid=c.id;
+  const monthStart=new Date(TODAY.getFullYear(),TODAY.getMonth(),1).toISOString();
+  const prevStart=new Date(TODAY.getFullYear(),TODAY.getMonth()-1,1).toISOString();
+  // appointments this month
+  let appts=[],prevAppts=[];
+  try{
+    const {data}=await sb.from(CONFIG.tables.appointments).select('*').eq('client_id',cid).gte(CONFIG.cols.apptAt,monthStart);
+    appts=data||[];
+    const {data:pd}=await sb.from(CONFIG.tables.appointments).select('*').eq('client_id',cid).gte(CONFIG.cols.apptAt,prevStart).lt(CONFIG.cols.apptAt,monthStart);
+    prevAppts=pd||[];
+  }catch(e){}
+  // metrics (spend) this month
+  let spend=0,prevSpend=0;
+  try{
+    const {data}=await sb.from(CONFIG.tables.metrics).select('*').eq('client_id',cid).gte('date',monthStart.slice(0,10));
+    spend=(data||[]).reduce((s,m)=>s+(Number(m[CONFIG.cols.spend])||0),0);
+    const {data:pd}=await sb.from(CONFIG.tables.metrics).select('*').eq('client_id',cid).gte('date',prevStart.slice(0,10)).lt('date',monthStart.slice(0,10));
+    prevSpend=(pd||[]).reduce((s,m)=>s+(Number(m[CONFIG.cols.spend])||0),0);
+  }catch(e){}
+  // closed jobs this month
+  let closed=0,revenue=0,prevClosed=0,prevRev=0;
+  try{
+    const {data}=await sb.from(CONFIG.tables.closedJobs).select('*').eq('client_id',cid);
+    (data||[]).forEach(j=>{
+      const d=new Date(j.closed_at||j.date||j.created_at||0);
+      const val=Number(j.value||j.revenue||j.amount||0);
+      if(d>=new Date(monthStart)){closed++;revenue+=val;}
+      else if(d>=new Date(prevStart)){prevClosed++;prevRev+=val;}
+    });
+  }catch(e){}
+
+  const apptCount=appts.length;
+  const avgJob=closed>0?Math.round(revenue/closed):(Number(c.avg_job_value)||9000);
   return {
-    appts_booked: booked,
-    appts_shown:  shown,
-    leads:        seededRand(s+2, 45, 85),
-    spend:        seededRand(s+3, 1100, 2200),
-    impressions:  seededRand(s+4, 38000, 95000),
-    clicks:       seededRand(s+5, 680, 1800),
+    id:cid,
+    name:c.name||c.business_name||'Client',
+    trade:c.trade||c.niche||'Service',
+    city:c.city||[c.city,c.state].filter(Boolean).join(', ')||'',
+    owner:c.owner_name||c.contact_name||c.owner||'',
+    appts:apptCount, spend, closed, revenue, avgJob,
+    closeRate:apptCount>0?closed/apptCount:0,
+    prev:{appts:prevAppts.length,spend:prevSpend,closed:prevClosed,revenue:prevRev},
+    appointments:appts.map(mapAppt).sort((a,b)=>b._d-a._d).slice(0,8),
+    weekly:weeklyFrom(appts,spend),
+    campaigns:[]
   };
 }
-
-// For demo admin view — use guest clients with metrics
-const DEMO_CLIENTS = GUEST_CLIENTS;
-const DEMO_METRICS = Object.fromEntries(GUEST_CLIENTS.map(c => [c.id, getGuestMetrics(c.id)]));
-
-function genDemoAppts() {
-  const names = [
-    'Marcus Rivera','Shane Kowalski','Tyrone Washington','Dmitri Petrov','Carlos Mendez',
-    'Jamal Brooks','Kevin OBrien','Raj Patel','Derek Thornton','Mike Castellano',
-    'Andre Williams','Chris Nakamura','Bryce Henderson','Omar Khalid','Tony Deluca',
-    'Jason Morales','Brett Sullivan','Kwame Osei','Nathan Bergstrom','Luis Fuentes',
-    'Chad Whitfield','Arjun Singh','Brandon Koonce','Elijah Carter','Patrick Nguyen',
-    'Darnell Jackson','Travis Holbrook','Sven Eriksson','Malik Thompson','Joe Ferrara',
-  ];
-  const now = Date.now();
-  const appts = [];
-  const usedNames = new Set();
-
-  // Past appointments (0-20 days ago) — never confirmed, already happened
-  const pastStatuses = ['attended','attended','attended','attended','showed','showed','showed','noshow','cancelled'];
-  for (let i = 0; i < 12; i++) {
-    const daysAgo = seededRand(SESSION_SEED + i * 17, 1, 20);
-    const hourOffset = seededRand(SESSION_SEED + i * 31, 8, 18) * 3600000;
-    let name;
-    let tries = 0;
-    do { name = names[seededRand(SESSION_SEED + i * 53 + tries, 0, names.length-1)]; tries++; } while (usedNames.has(name) && tries < 20);
-    usedNames.add(name);
-    appts.push({
-      contact_name: name,
-      start_time: new Date(now - daysAgo * 86400000 + hourOffset).toISOString(),
-      status: pastStatuses[seededRand(SESSION_SEED + i * 71, 0, pastStatuses.length-1)],
-    });
-  }
-
-  // Upcoming appointments (1-7 days from now) — always confirmed
-  for (let i = 0; i < 5; i++) {
-    const daysAhead = seededRand(SESSION_SEED + i * 23 + 1000, 1, 7);
-    const hourOffset = seededRand(SESSION_SEED + i * 43 + 1000, 8, 17) * 3600000;
-    let name;
-    let tries = 0;
-    do { name = names[seededRand(SESSION_SEED + i * 61 + 1000 + tries, 0, names.length-1)]; tries++; } while (usedNames.has(name) && tries < 20);
-    usedNames.add(name);
-    appts.push({
-      contact_name: name,
-      start_time: new Date(now + daysAhead * 86400000 + hourOffset).toISOString(),
-      status: 'confirmed',
-    });
-  }
-
-  // Sort by date descending
-  return appts.sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
+function mapAppt(a){
+  const d=new Date(a[CONFIG.cols.apptAt]||0);
+  let st='pe';
+  const raw=(a.status||'').toLowerCase();
+  if(d<TODAY){ st = raw.includes('clos')||raw.includes('won')?'cl': raw.includes('no')?'ns':'cf'; }
+  else { st='pe'; }
+  return {_d:d,date:MN[d.getMonth()]+' '+d.getDate(),name:a.contact_name||a.name||'Contact',type:a.type||a.service||'Appointment',status:st};
 }
-const DEMO_APPTS = genDemoAppts();
+function weeklyFrom(appts,spend){
+  const w=[0,0,0,0];
+  appts.forEach(a=>{const day=new Date(a[CONFIG.cols.apptAt]||0).getDate();const wi=Math.min(3,Math.floor((day-1)/7));w[wi]++;});
+  return w.map((a,i)=>({w:'Wk '+(i+1),a,s:Math.round(spend/4)}));
+}
 
-function genDemoJobs() {
-  // Base job pool — each job has a fixed date relative to "today"
-  // New jobs appear every ~2 days going back in time from today
-  const today = new Date();
-  const todayStamp = today.getTime();
+/* ════════════════════════════════════════════════════════════
+   PACE / HEALTH
+   ════════════════════════════════════════════════════════════ */
+function pace(appts){
+  const proj = DAY>0 ? Math.round(appts/DAY*DPM*10)/10 : 0;
+  const t=CONFIG.guarantee;
+  let st,col,pc;
+  if(proj>=t){st='On track';col='#3B6D11';pc='on';}
+  else if(proj>=t*.8){st='At risk';col='#BA7517';pc='at';}
+  else{st='Behind';col='#A32D2D';pc='bh';}
+  return {proj,st,col,pc,rem:DPM-DAY,needed:Math.max(0,t-appts)};
+}
 
-  // Helper: get date N days ago as YYYY-MM-DD
-  function daysAgo(n) {
-    const d = new Date(todayStamp - n * 86400000);
-    return d.toISOString().split('T')[0];
+/* ════════════════════════════════════════════════════════════
+   SHELL / ROUTING
+   ════════════════════════════════════════════════════════════ */
+function renderShell(){
+  const tabs=[];
+  if(S.activeClientId){
+    tabs.push(['overview','Overview'],['budget','Budget']);
+  } else if(S.isAdmin){
+    tabs.push(['overview','Portfolio']);
+  } else {
+    tabs.push(['overview','Overview'],['budget','Budget']);
   }
+  el('subtabs').innerHTML=tabs.map(([k,l])=>`<div class="subtab ${S.tab===k?'act':''}" onclick="switchTab('${k}')">${l}</div>`).join('');
+}
+function switchTab(t){ S.tab=t; renderShell(); routeAdminOrClient(); }
+function toggleMenu(){ el('menu').classList.toggle('open'); }
+document.addEventListener('click',e=>{ if(!e.target.closest('.tn-menu')) el('menu').classList.remove('open'); });
 
-  const allJobs = [
-    { name: 'Tyrone Washington', desc: 'Exposed aggregate driveway',         value: 16400, daysBack: 0  },
-    { name: 'Dmitri Petrov',     desc: 'Commercial parking lot section',     value: 38000, daysBack: 2  },
-    { name: 'Brett Sullivan',    desc: 'Backyard patio + outdoor kitchen',   value: 28500, daysBack: 5  },
-    { name: 'Mike Castellano',   desc: 'Stamped patio + steps',              value: 19200, daysBack: 7  },
-    { name: 'Kwame Osei',        desc: 'Commercial sidewalk replacement',    value: 31000, daysBack: 10 },
-    { name: 'Jason Morales',     desc: 'Full property flatwork package',     value: 24800, daysBack: 12 },
-    { name: 'Carlos Mendez',     desc: 'Full driveway replacement',          value: 12400, daysBack: 16 },
-    { name: 'Jamal Brooks',      desc: 'Decorative pool deck',               value: 22500, daysBack: 19 },
-    { name: 'Shane Kowalski',    desc: 'Stamped driveway + patio combo',     value: 17600, daysBack: 22 },
-    { name: 'Derek Thornton',    desc: 'Concrete patio + retaining wall',    value: 18200, daysBack: 25 },
-    { name: 'Luis Fuentes',      desc: 'Driveway + retaining wall',          value: 15900, daysBack: 30 },
-    { name: 'Marcus Rivera',     desc: 'Stamped concrete driveway',          value: 14800, daysBack: 35 },
-    { name: 'Omar Khalid',       desc: 'Decorative concrete porch + steps',  value: 13200, daysBack: 40 },
-    { name: 'Andre Williams',    desc: 'Concrete driveway + apron',          value: 11600, daysBack: 45 },
-    { name: 'Raj Patel',         desc: 'Concrete flatwork + walkway',        value: 9800,  daysBack: 50 },
-    { name: 'Malik Thompson',    desc: 'Exposed aggregate patio',            value: 16800, daysBack: 55 },
-    { name: 'Patrick Nguyen',    desc: 'Stamped concrete pool deck',         value: 21200, daysBack: 60 },
-    { name: 'Sven Eriksson',     desc: 'Commercial entrance flatwork',       value: 27400, daysBack: 65 },
-    { name: 'Elijah Carter',     desc: 'Driveway replacement + border',      value: 13600, daysBack: 70 },
-    { name: 'Arjun Singh',       desc: 'Decorative driveway + steps',        value: 18900, daysBack: 75 },
-  ];
+function setBC(){
+  if(S.activeClientId){
+    const c=S.clients.find(x=>x.id===S.activeClientId);
+    const root = S.isAdmin?`<span class="lnk" onclick="goPortfolio()">Portfolio</span><span class="sep">›</span>`:'';
+    el('bc').innerHTML=`${root}<span class="cur">${esc(c?c.name:'')}</span>`;
+  } else {
+    el('bc').innerHTML=`<span class="cur">${S.isAdmin?'Portfolio':'Overview'}</span>`;
+  }
+}
+function goPortfolio(){ S.activeClientId=null; S.tab='overview'; renderShell(); routeAdminOrClient(); }
+function goClient(id){ S.activeClientId=id; S.tab='overview'; S.budget=null; renderShell(); routeAdminOrClient(); }
 
-  return allJobs.map((j, i) => {
-    const variance = seededRand(SESSION_SEED + i * 53, -300, 600);
-    return {
-      client_name: j.name,
-      description: j.desc,
-      job_value: j.value + variance,
-      closed_date: daysAgo(j.daysBack),
-    };
+function routeAdminOrClient(){
+  setBC();
+  if(S.activeClientId){
+    if(S.tab==='budget') renderBudget();
+    else renderClientView();
+  } else if(S.isAdmin){
+    renderPortfolio();
+  } else {
+    // non-admin, no/empty client
+    el('view').innerHTML='<div class="empty"><div class="ico">📭</div><div>No dashboard data yet.<br><span class="muted" style="font-size:12px">Your campaigns are being set up.</span></div></div>';
+  }
+}
+
+/* ════════════════════════════════════════════════════════════
+   PORTFOLIO (admin)
+   ════════════════════════════════════════════════════════════ */
+function renderPortfolio(){
+  const cs=S.clients;
+  if(!cs.length){ el('view').innerHTML='<div class="empty"><div class="ico">📭</div><div>No clients yet.</div></div>'; return; }
+  const tot=cs.reduce((a,c)=>({appts:a.appts+c.appts,spend:a.spend+c.spend,revenue:a.revenue+c.revenue,closed:a.closed+c.closed}),{appts:0,spend:0,revenue:0,closed:0});
+  const prev=cs.reduce((a,c)=>({appts:a.appts+c.prev.appts,spend:a.spend+c.prev.spend,revenue:a.revenue+c.prev.revenue}),{appts:0,spend:0,revenue:0});
+  const roas=tot.spend>0?(tot.revenue/tot.spend).toFixed(1):'0';
+
+  let html=`
+  <div class="sec-t">Portfolio overview</div>
+  <div class="sec-s">${MN[TODAY.getMonth()]} ${TODAY.getFullYear()} · ${cs.length} active client${cs.length!==1?'s':''}</div>
+  <div class="grid4" style="margin-bottom:15px">
+    <div class="card"><span class="lbl">Appointments</span><div class="num">${fN(tot.appts)}</div><div class="mc-m">${deltaHtml(tot.appts,prev.appts)}<span class="sub" style="margin:0">vs last month</span></div></div>
+    <div class="card"><span class="lbl">Ad spend</span><div class="num">${f$(tot.spend)}</div><div class="mc-m">${deltaHtml(tot.spend,prev.spend,true)}<span class="sub" style="margin:0">meta ads</span></div></div>
+    <div class="card gn"><span class="lbl">Revenue</span><div class="num">${f$(tot.revenue)}</div><div class="mc-m">${deltaHtml(tot.revenue,prev.revenue)}<span class="sub" style="margin:0">closed jobs</span></div></div>
+    <div class="card"><span class="lbl">Closed jobs</span><div class="num">${fN(tot.closed)}</div><div class="sub">won this month</div></div>
+  </div>
+  <div class="card gs" style="margin-bottom:17px;display:flex;align-items:center;gap:24px;flex-wrap:wrap">
+    <div><span class="lbl">Portfolio ROAS</span><div class="num serif" style="font-size:30px">${roas}×</div><div class="sub">${'$'+roas} revenue per $1 ad spend</div></div>
+    <div style="flex:1;display:flex;gap:22px;flex-wrap:wrap">
+      ${cs.map(c=>`<div><div style="font-size:11px;color:var(--ok);margin-bottom:3px">${esc(c.name)}</div><div class="serif" style="font-size:17px;color:#173404">${c.spend>0?(c.revenue/c.spend).toFixed(1):'0'}×</div></div>`).join('')}
+    </div>
+  </div>
+  <div class="sec-t" style="margin-bottom:13px">Client health</div>
+  <div class="grid3">`;
+  cs.forEach(c=>{
+    const p=pace(c.appts);
+    const cpa=c.appts>0?Math.round(c.spend/c.appts):0;
+    const roasC=c.spend>0?(c.revenue/c.spend).toFixed(1):'0';
+    const frac=Math.min(c.appts/CONFIG.guarantee,1);
+    const circ=2*Math.PI*17, off=(circ*(1-frac)).toFixed(1);
+    html+=`
+    <div class="cc ${p.pc==='at'?'at':p.pc==='bh'?'bh':''}" onclick="goClient('${c.id}')">
+      <div class="cc-hd"><div><div class="cc-n">${esc(c.name)}</div><div class="cc-m"><span class="trade">${esc(c.trade)}</span>${c.city?'· '+esc(c.city):''}</div></div><span class="chip chip-${p.pc}">${p.st}</span></div>
+      <div class="cc-ring">
+        <svg width="46" height="46" viewBox="0 0 46 46" aria-hidden="true">
+          <circle cx="23" cy="23" r="17" fill="none" stroke="${p.pc==='on'?'#EAF3DE':p.pc==='at'?'#FAEEDA':'#FCEBEB'}" stroke-width="5"/>
+          <circle cx="23" cy="23" r="17" fill="none" stroke="${p.col}" stroke-width="5" stroke-linecap="round" stroke-dasharray="${circ.toFixed(1)}" stroke-dashoffset="${off}" transform="rotate(-90 23 23)"/>
+          <text x="23" y="28" text-anchor="middle" class="serif" fill="${p.col}" style="font-size:13px">${c.appts}</text>
+        </svg>
+        <div><div class="cc-ring-a">${c.appts} of ${CONFIG.guarantee} appts</div><div class="cc-ring-p">Pace ${p.proj} · ${p.rem}d left</div></div>
+      </div>
+      <div class="cc-mini">
+        <div><div class="cc-mini-l">Spend</div><div class="cc-mini-v">${f$(c.spend)}</div></div>
+        <div><div class="cc-mini-l">CPA</div><div class="cc-mini-v">$${cpa}</div></div>
+        <div><div class="cc-mini-l">Revenue</div><div class="cc-mini-v">${f$(c.revenue)}</div></div>
+        <div><div class="cc-mini-l">ROAS</div><div class="cc-mini-v">${roasC}×</div></div>
+        <div><div class="cc-mini-l">Closed</div><div class="cc-mini-v">${c.closed}</div></div>
+        <div><div class="cc-mini-l">Close %</div><div class="cc-mini-v">${fp(c.closeRate*100)}</div></div>
+      </div>
+      <div class="cc-f"><span>${esc(c.owner||'')}</span><span>${esc(c.city||'')}</span></div>
+    </div>`;
   });
-}
-const DEMO_JOBS = genDemoJobs();
-
-// ═══════════════════════════════════════════════
-// AUTH
-// ═══════════════════════════════════════════════
-async function doLogin() {
-  const email = document.getElementById('email-input').value.trim();
-  const pass = document.getElementById('pass-input').value;
-  document.getElementById('login-error').style.display = 'none';
-
-  const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
-  if (error) {
-    document.getElementById('login-error').style.display = 'block';
-    return;
-  }
-  CURRENT_USER = data.user;
-  IS_DEMO = false;
-  await loadRealDashboard();
+  html+=`</div>`;
+  el('view').innerHTML=html;
 }
 
-async function loadRealDashboard() {
-  // Check if admin
-  const email = CURRENT_USER.email;
-  IS_ADMIN = (email === 'admin@thehammerlist.com' || email === 'david@thehammerlist.com' || email === 'humza@thehammerlist.com' || email === 'sher@thehammerlist.com');
+/* ════════════════════════════════════════════════════════════
+   CLIENT VIEW
+   ════════════════════════════════════════════════════════════ */
+function renderClientView(){
+  const c=S.clients.find(x=>x.id===S.activeClientId);
+  if(!c){ goPortfolio(); return; }
+  const p=pace(c.appts);
+  const cpa=c.appts>0?Math.round(c.spend/c.appts):0;
+  const cpj=c.closed>0?Math.round(c.spend/c.closed):0;
+  const roas=c.spend>0?(c.revenue/c.spend).toFixed(1):'0';
+  const pipe=Math.round((c.appts-c.closed)*c.avgJob);
+  const dr=DAY>0?(c.appts/DAY).toFixed(1):0;
+  const nd=p.rem>0?(p.needed/p.rem).toFixed(1):0;
+  const r=62,circ=2*Math.PI*r,off=(circ*(1-Math.min(c.appts/CONFIG.guarantee,1))).toFixed(1);
 
-  if (!IS_ADMIN) {
-    // Load client row by auth_user_id or email
-    const { data: clients } = await sb.from('clients').select('*').eq('email', email).limit(1);
-    CURRENT_CLIENT = clients?.[0] || null;
-  }
-
-  document.getElementById('topbar-user').textContent = CURRENT_USER.email;
-  document.getElementById('demo-badge').style.display = 'none';
-  showDashboard();
-}
-
-async function checkSession() {
-  const { data } = await sb.auth.getSession();
-  if (data?.session?.user) {
-    CURRENT_USER = data.session.user;
-    IS_DEMO = false;
-    await loadRealDashboard();
-  }
-}
-
-function doLogout() {
-  if (!IS_DEMO) sb.auth.signOut();
-  IS_DEMO = false; IS_ADMIN = false; CURRENT_USER = null; CURRENT_CLIENT = null;
-  document.getElementById('dashboard').style.display = 'none';
-  document.getElementById('login-screen').style.display = 'flex';
-}
-
-// ═══════════════════════════════════════════════
-// DEMO
-// ═══════════════════════════════════════════════
-function loadDemo(role) {
-  IS_DEMO = true;
-  IS_ADMIN = (role === 'admin');
-  CURRENT_CLIENT = IS_ADMIN ? null : DEMO_CLIENTS[0];
-  document.getElementById('topbar-user').textContent = IS_ADMIN ? 'admin@thehammerlist.com' : '';
-  document.getElementById('demo-badge').style.display = 'inline-block';
-  showDashboard();
-}
-
-// ═══════════════════════════════════════════════
-// DASHBOARD SETUP
-// ═══════════════════════════════════════════════
-function showDashboard() {
-  document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('dashboard').style.display = 'block';
-  document.getElementById('nav-admin-section').style.display = IS_ADMIN ? 'block' : 'none';
-
-  if (IS_ADMIN) {
-    showView('admin-clients');
-  } else {
-    showView('overview');
-  }
-}
-
-function showView(id) {
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('view-' + id)?.classList.add('active');
-  document.querySelector(`[onclick="showView('${id}')"]`)?.classList.add('active');
-
-  if (id === 'overview') loadOverview();
-  if (id === 'appointments') loadAppointments();
-  if (id === 'jobs') loadJobs();
-  if (id === 'roi') loadRoi();
-  if (id === 'admin-clients') loadAdminClients();
-  if (id === 'admin-overview') loadAdminOverview();
-}
-
-// ═══════════════════════════════════════════════
-// OVERVIEW
-// ═══════════════════════════════════════════════
-async function loadOverview() {
-  let client, metrics, appts;
-
-  if (IS_DEMO) {
-    client = (CURRENT_CLIENT && CURRENT_CLIENT.id && CURRENT_CLIENT.id.startsWith('g')) ? CURRENT_CLIENT : GUEST_CLIENTS[0];
-    metrics = getGuestMetrics(client.id);
-    appts = DEMO_APPTS;
-  } else {
-    client = CURRENT_CLIENT;
-    if (!client) { document.getElementById('stat-grid').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div>Client profile not found.</div>'; return; }
-
-    const now = new Date();
-    const month = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
-
-    const [mRes, aRes] = await Promise.all([
-      sb.from('metrics').select('*').eq('client_id', client.id).order('month', { ascending: false }).limit(1).single(),
-      sb.from('appointments').select('*').eq('client_id', client.id).order('start_time', { ascending: false }).limit(10)
-    ]);
-    metrics = mRes.data || {};
-    appts = aRes.data || [];
-  }
-
-  // Header
-  document.getElementById('overview-title').textContent = IS_DEMO ? `${client.trade} Contractor` : client.name;
-  document.getElementById('overview-sub').textContent = `${client.trade} · ${client.city}`;
-
-  // Ticker
-  buildTicker(client, metrics);
-
-  // Stats
-  const apptGoal = 15;
-  const progress = Math.min(100, Math.round((metrics.appts_booked || 0) / apptGoal * 100));
-  const roi = metrics.spend > 0
-    ? (((metrics.appts_booked || 0) * 0.35 * (client.avg_job_value || 8500)) / ((client.retainer_amount || 2000) + (metrics.spend || 0))).toFixed(1) + 'x'
-    : '—';
-
-  document.getElementById('stat-grid').innerHTML = `
-    <div class="stat-card">
-      <div class="stat-label">Appts Booked</div>
-      <div class="stat-val copper">${metrics.appts_booked || 0}</div>
-      <div class="progress-bar"><div class="progress-fill" style="width:${progress}%"></div></div>
-      <div class="stat-change">${progress}% of 15 goal</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Appts Shown</div>
-      <div class="stat-val">${metrics.appts_shown || 0}</div>
-      <div class="stat-change">${metrics.appts_booked ? Math.round((metrics.appts_shown||0)/(metrics.appts_booked)*100) : 0}% show rate</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Meta Leads</div>
-      <div class="stat-val blue">${metrics.leads || 0}</div>
-      <div class="stat-change">From Meta campaigns</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Ad Spend</div>
-      <div class="stat-val">$${(metrics.spend || 0).toLocaleString()}</div>
-      <div class="stat-change">This month</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Impressions</div>
-      <div class="stat-val">${fmtNum(metrics.impressions || 0)}</div>
-      <div class="stat-change">${fmtNum(metrics.clicks || 0)} clicks</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Est. ROI</div>
-      <div class="stat-val green">${roi}</div>
-      <div class="stat-change">Return on investment</div>
-    </div>
-  `;
-
-  // Charts
-  buildApptsChart(metrics);
-  buildMetaChart(metrics);
-
-  // Appointments list
-  const list = document.getElementById('appt-list');
-  if (!appts.length) {
-    list.innerHTML = '<div class="empty"><div class="empty-icon">📅</div>No appointments yet this month</div>';
-    return;
-  }
-  list.innerHTML = appts.map(a => `
-    <div class="appt-item">
-      <div class="appt-time">${fmtDate(a.start_time)}</div>
-      <div class="appt-name">${a.contact_name || 'Unknown'}</div>
-      <div>${statusBadge(a.status)}</div>
-    </div>
-  `).join('');
-}
-
-function buildTicker(client, metrics) {
-  const ticker = document.getElementById('ticker-bar');
-  const content = document.getElementById('ticker-content');
-  ticker.style.display = 'flex';
-  const items = [
-    `Appts Booked <span>${metrics.appts_booked || 0}</span>`,
-    `Show Rate <span>${metrics.appts_booked ? Math.round((metrics.appts_shown||0)/(metrics.appts_booked)*100) : 0}%</span>`,
-    `Leads <span>${metrics.leads || 0}</span>`,
-    `Ad Spend <span>$${(metrics.spend||0).toLocaleString()}</span>`,
-    `Impressions <span>${fmtNum(metrics.impressions||0)}</span>`,
-    `Clicks <span>${fmtNum(metrics.clicks||0)}</span>`,
+  const metrics=[
+    {l:'Appointments',v:fN(c.appts),d:deltaHtml(c.appts,c.prev.appts),s:'this month'},
+    {l:'Ad spend',v:f$(c.spend),d:deltaHtml(c.spend,c.prev.spend,true),s:'meta ads'},
+    {l:'Cost / appt',v:'$'+cpa,d:'',s:'per booking'},
+    {l:'Closed jobs',v:fN(c.closed),d:deltaHtml(c.closed,c.prev.closed),s:'won deals',g:true},
+    {l:'Revenue',v:f$(c.revenue),d:deltaHtml(c.revenue,c.prev.revenue),s:'closed jobs',g:true},
+    {l:'ROAS',v:roas+'×',d:'',s:'per $1 spent',g:true},
+    {l:'Cost / closed job',v:'$'+fN(cpj),d:'',s:'per won deal'},
+    {l:'Close rate',v:fp(c.closeRate*100),d:'',s:'appts → deals'}
   ];
-  const html = [...items, ...items].map(i => `<div class="ticker-item">${i}</div>`).join('');
-  content.innerHTML = html;
-}
 
-function buildApptsChart(metrics) {
-  destroyChart('chart-appts');
-  const ctx = document.getElementById('chart-appts').getContext('2d');
-  charts['chart-appts'] = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: ['Booked', 'Shown', 'Goal'],
-      datasets: [{
-        data: [metrics.appts_booked || 0, metrics.appts_shown || 0, 15],
-        backgroundColor: ['rgba(196,113,59,0.8)', 'rgba(74,222,128,0.8)', 'rgba(255,255,255,0.1)'],
-        borderRadius: 4, borderSkipped: false,
-      }]
-    },
-    options: chartOpts()
-  });
-}
+  const stL={cf:'Confirmed',cl:'Closed',ns:'No show',pe:'Upcoming'};
+  const apptRows=c.appointments.length?c.appointments.map(a=>`
+    <div style="display:grid;grid-template-columns:54px 1fr auto auto;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)">
+      <span style="font-size:11px;color:var(--ink-2)">${esc(a.date)}</span>
+      <span style="font-size:12px;font-weight:500">${esc(a.name)}</span>
+      <span style="font-size:11px;color:var(--ink-2)">${esc(a.type)}</span>
+      <span class="as as-${a.status}">${stL[a.status]||''}</span>
+    </div>`).join(''):'<div class="muted" style="padding:14px 0;font-size:12px">No appointments yet this month.</div>';
 
-function buildMetaChart(metrics) {
-  destroyChart('chart-meta');
-  const ctx = document.getElementById('chart-meta').getContext('2d');
-  charts['chart-meta'] = new Chart(ctx, {
-    type: 'doughnut',
-    data: {
-      labels: ['Ad Spend', 'Meta Leads', 'Clicks'],
-      datasets: [{
-        data: [metrics.spend || 0, (metrics.leads || 0) * 50, (metrics.clicks || 0) * 2],
-        backgroundColor: ['rgba(196,113,59,0.8)', 'rgba(96,165,250,0.8)', 'rgba(74,222,128,0.8)'],
-        borderWidth: 0,
-      }]
-    },
-    options: { ...chartOpts(), cutout: '65%' }
-  });
-}
+  const camps=c.campaigns&&c.campaigns.length?[...c.campaigns].sort((a,b)=>(a.s/a.a)-(b.s/b.a)):[];
+  const campRows=camps.length?camps.map((x,i)=>`
+    <div style="display:grid;grid-template-columns:1fr 56px 40px 52px;gap:8px;align-items:start;padding:8px 0;border-top:1px solid var(--line)">
+      <div><div style="font-size:12px;font-weight:500">${esc(x.n)}</div>${i===0?'<div style="font-size:9px;color:var(--ok);font-weight:500">◆ most efficient</div>':''}</div>
+      <span style="font-size:11px;text-align:right;color:var(--ink-2)">${f$(x.s)}</span>
+      <span style="font-size:11px;text-align:right;color:var(--ink-2)">${x.a}</span>
+      <span style="font-size:11px;text-align:right;font-weight:500;color:${i===0?'var(--ok)':'var(--ink)'}">$${Math.round(x.s/x.a)}</span>
+    </div>`).join(''):'<div class="muted" style="padding:14px 0;font-size:12px">Campaign breakdown syncs from Meta.</div>';
 
-// ═══════════════════════════════════════════════
-// APPOINTMENTS
-// ═══════════════════════════════════════════════
-async function loadAppointments() {
-  const wrap = document.getElementById('appts-table-wrap');
-  let appts;
+  const noShows=c.appointments.filter(a=>a.status==='ns').length;
+  const nsRate=c.appointments.length?noShows/c.appointments.length:0;
+  const nsAlert=nsRate>0.10?`<div class="alert alert-warn" style="margin-top:13px"><span>⚠</span><div><strong>No-show rate is ${fp(nsRate*100)} this month</strong> — above the 8–10% norm. A double-confirmation sequence in GHL would recover most of these.</div></div>`:'';
 
-  if (IS_DEMO) {
-    appts = DEMO_APPTS;
-  } else {
-    const { data } = await sb.from('appointments').select('*').eq('client_id', CURRENT_CLIENT?.id).order('start_time', { ascending: false });
-    appts = data || [];
-  }
+  let html=`
+  ${S.isAdmin?'<button class="back" onclick="goPortfolio()">← Portfolio</button>':''}
+  <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:4px">
+    <span class="serif" style="font-size:20px">${esc(c.name)}</span>
+    <span class="trade">${esc(c.trade)}</span>
+    <span class="chip chip-${p.pc}">${p.st}</span>
+  </div>
+  <div class="sec-s">${[esc(c.city),esc(c.owner)].filter(Boolean).join(' · ')} · ${MN[TODAY.getMonth()]} ${TODAY.getFullYear()}</div>
 
-  if (!appts.length) { wrap.innerHTML = '<div class="empty"><div class="empty-icon">📅</div>No appointments found</div>'; return; }
-
-  wrap.innerHTML = `<table>
-    <thead><tr><th>Name</th><th>Date & Time</th><th>Status</th></tr></thead>
-    <tbody>${appts.map(a => `
-      <tr>
-        <td>${a.contact_name || 'Unknown'}</td>
-        <td style="font-family:var(--mono);font-size:12px">${fmtDate(a.start_time)}</td>
-        <td>${statusBadge(a.status)}</td>
-      </tr>
-    `).join('')}</tbody>
-  </table>`;
-}
-
-// ═══════════════════════════════════════════════
-// JOBS
-// ═══════════════════════════════════════════════
-async function loadJobs() {
-  const wrap = document.getElementById('jobs-table-wrap');
-  let jobs;
-
-  if (IS_DEMO) {
-    jobs = DEMO_JOBS;
-  } else {
-    const { data } = await sb.from('closed_jobs').select('*').eq('client_id', CURRENT_CLIENT?.id).order('closed_date', { ascending: false });
-    jobs = data || [];
-  }
-
-  if (!jobs.length) { wrap.innerHTML = '<div class="empty"><div class="empty-icon">💰</div>No closed jobs yet. Add your first one!</div>'; return; }
-
-  const total = jobs.reduce((s, j) => s + (j.job_value || 0), 0);
-  wrap.innerHTML = `
-    <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
-      <div style="font-family:var(--mono);font-size:13px;color:var(--text2)">
-        Total Revenue: <span style="color:var(--green);font-size:16px">$${total.toLocaleString()}</span>
+  <div class="card" style="display:flex;gap:24px;align-items:center;flex-wrap:wrap;margin-bottom:14px">
+    <svg width="150" height="150" viewBox="0 0 150 150" role="img" aria-label="${c.appts} of ${CONFIG.guarantee} appointments, ${p.st}">
+      <circle cx="75" cy="75" r="${r}" fill="none" stroke="#EAF3DE" stroke-width="9"/>
+      <circle cx="75" cy="75" r="${r}" fill="none" stroke="${p.col}" stroke-width="9" stroke-linecap="round" stroke-dasharray="${circ.toFixed(1)}" stroke-dashoffset="${off}" transform="rotate(-90 75 75)"/>
+      <text x="75" y="68" text-anchor="middle" class="serif" fill="${p.col}" style="font-size:32px">${c.appts}</text>
+      <text x="75" y="86" text-anchor="middle" fill="var(--ink-2)" style="font-size:11px;font-family:Outfit">of ${CONFIG.guarantee} appts</text>
+      <text x="75" y="103" text-anchor="middle" fill="${p.col}" style="font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;font-family:Outfit">${p.st}</text>
+    </svg>
+    <div style="flex:1;min-width:260px">
+      <div class="serif" style="font-size:16px;margin-bottom:2px">${CONFIG.guarantee}-appointment guarantee</div>
+      <div class="sub" style="margin-bottom:12px">Day ${DAY} of ${DPM} · ${MN[TODAY.getMonth()]}</div>
+      <div class="grid2" style="gap:9px">
+        <div class="card sur" style="margin:0;padding:11px 13px"><span class="lbl">Projected month-end</span><div class="serif" style="font-size:18px;color:${p.col}">${p.proj}</div><div class="sub">vs ${CONFIG.guarantee} target</div></div>
+        <div class="card sur" style="margin:0;padding:11px 13px"><span class="lbl">Days remaining</span><div class="serif" style="font-size:18px">${p.rem}</div><div class="sub">${p.needed>0?p.needed+' more needed':'guarantee met ✓'}</div></div>
+        <div class="card sur" style="margin:0;padding:11px 13px"><span class="lbl">Daily run rate</span><div class="serif" style="font-size:18px">${dr}/day</div><div class="sub">need ${nd}/day</div></div>
+        <div class="card sur" style="margin:0;padding:11px 13px"><span class="lbl">Pipeline value</span><div class="serif" style="font-size:18px;color:var(--ok)">${f$(pipe)}</div><div class="sub">open appts × avg job</div></div>
       </div>
     </div>
-    <table>
-      <thead><tr><th>Client</th><th>Description</th><th>Value</th><th>Date</th></tr></thead>
-      <tbody>${jobs.map(j => `
-        <tr>
-          <td>${j.client_name || '—'}</td>
-          <td>${j.description || '—'}</td>
-          <td style="font-family:var(--mono);color:var(--green)">$${(j.job_value||0).toLocaleString()}</td>
-          <td style="font-family:var(--mono);font-size:12px;color:var(--text2)">${j.closed_date || '—'}</td>
-        </tr>
-      `).join('')}</tbody>
-    </table>`;
+  </div>
+
+  <div class="grid4" style="margin-bottom:14px">
+    ${metrics.map(m=>`<div class="mc ${m.g?'gn':''}"><div class="mc-l">${m.l}</div><div class="mc-v">${m.v}</div><div class="mc-m">${m.d}<span class="mc-s">${m.s}</span></div></div>`).join('')}
+  </div>
+
+  <div class="grid2">
+    <div class="card"><div class="sec-t" style="font-size:13px">Appointments by week</div><div class="sec-s">${MN[TODAY.getMonth()]} ${TODAY.getFullYear()}</div><div style="position:relative;height:150px"><canvas id="cv-wk" role="img" aria-label="Weekly appointments">Weekly appointments.</canvas></div></div>
+    <div class="card"><div class="sec-t" style="font-size:13px">Recent appointments</div><div class="sec-s">Latest from GHL</div>
+      <div style="display:grid;grid-template-columns:54px 1fr auto auto;gap:10px;padding-bottom:6px;border-bottom:1px solid var(--line)"><span class="th">Date</span><span class="th">Contact</span><span class="th">Type</span><span class="th">Status</span></div>
+      ${apptRows}
+    </div>
+  </div>
+
+  <div class="card"><div class="sec-t" style="font-size:13px">Campaign breakdown</div><div class="sec-s">Sorted by efficiency — lowest cost per appointment first</div>
+    <div style="display:grid;grid-template-columns:1fr 56px 40px 52px;gap:8px;padding-bottom:6px;border-bottom:1px solid var(--line)"><span class="th">Campaign</span><span class="th" style="text-align:right">Spend</span><span class="th" style="text-align:right">Appts</span><span class="th" style="text-align:right">CPA</span></div>
+    ${campRows}
+  </div>
+  ${nsAlert}`;
+  el('view').innerHTML=html;
+  drawWeekly(c);
 }
 
-function openAddJob() {
-  document.getElementById('job-date').value = new Date().toISOString().split('T')[0];
-  document.getElementById('job-modal').style.display = 'flex';
+let chWk=null;
+function drawWeekly(c){
+  const cv=el('cv-wk'); if(!cv||!window.Chart) return;
+  const ex=window.Chart.getChart(cv); if(ex) ex.destroy();
+  chWk=new window.Chart(cv,{type:'bar',data:{labels:c.weekly.map(w=>w.w),datasets:[{data:c.weekly.map(w=>w.a),backgroundColor:'#2D6A4F',borderRadius:4,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:10},color:'#8A968E'},border:{display:false}},y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{font:{size:10},color:'#8A968E',stepSize:2},border:{display:false}}}}});
 }
 
-async function submitJob() {
-  const job = {
-    client_name: document.getElementById('job-client').value,
-    description: document.getElementById('job-desc').value,
-    job_value: parseFloat(document.getElementById('job-val').value),
-    closed_date: document.getElementById('job-date').value,
-    client_id: CURRENT_CLIENT?.id || null,
-  };
-
-  if (!IS_DEMO) {
-    await sb.from('closed_jobs').insert(job);
-  } else {
-    DEMO_JOBS.unshift(job);
-  }
-  closeModal('job-modal');
-  loadJobs();
-}
-
-// ═══════════════════════════════════════════════
-// ROI
-// ═══════════════════════════════════════════════
-function loadRoi() {
-  if (CURRENT_CLIENT) {
-    document.getElementById('roi-retainer').value = CURRENT_CLIENT.retainer_amount || 2000;
-    document.getElementById('roi-jobval').value = CURRENT_CLIENT.avg_job_value || 8500;
-  }
-  calcRoi();
-}
-
-function calcRoi() {
-  const retainer = parseFloat(document.getElementById('roi-retainer').value) || 0;
-  const spend = parseFloat(document.getElementById('roi-spend').value) || 0;
-  const appts = parseFloat(document.getElementById('roi-appts').value) || 0;
-  const close = parseFloat(document.getElementById('roi-close').value) || 0;
-  const jobval = parseFloat(document.getElementById('roi-jobval').value) || 0;
-
-  const jobs = Math.round(appts * (close / 100));
-  const revenue = jobs * jobval;
-  const invest = retainer + spend;
-  const net = invest > 0 ? (revenue / invest).toFixed(1) + 'x' : '—';
-
-  document.getElementById('roi-jobs').textContent = jobs;
-  document.getElementById('roi-revenue').textContent = '$' + revenue.toLocaleString();
-  document.getElementById('roi-invest').textContent = '$' + invest.toLocaleString();
-  document.getElementById('roi-net').textContent = net;
-}
-
-// ═══════════════════════════════════════════════
-// ADMIN: CLIENTS
-// ═══════════════════════════════════════════════
-let CURRENT_RANGE = 'all';
-
-function setRange(range, btn) {
-  CURRENT_RANGE = range;
-  document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  loadAdminClients();
-}
-
-async function loadAdminClients() {
-  const wrap = document.getElementById('admin-clients-wrap');
-  let clients;
-
-  if (IS_DEMO) {
-    clients = DEMO_CLIENTS.map(c => ({ ...c, metrics: DEMO_METRICS[c.id] || {} }));
-  } else {
-    const now = new Date();
-    const month = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
-    const { data: cData } = await sb.from('clients').select('*').eq('is_active', true);
-    let mQuery = sb.from('metrics').select('*');
-    if (CURRENT_RANGE === 'month') {
-      const now = new Date();
-      const month = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
-      mQuery = mQuery.eq('month', month);
-    } else if (CURRENT_RANGE === '30') {
-      const d = new Date(); d.setDate(d.getDate()-30);
-      mQuery = mQuery.gte('month', d.toISOString().split('T')[0]);
-    }
-    const { data: mData } = await mQuery;
-    clients = (cData || []).map(c => {
-      const rows = mData?.filter(m => m.client_id === c.id) || [];
-      const agg = rows.reduce((acc, m) => ({
-        appts_booked: (acc.appts_booked||0) + (m.appts_booked||0),
-        appts_shown: (acc.appts_shown||0) + (m.appts_shown||0),
-        leads: (acc.leads||0) + (m.leads||0),
-        spend: (acc.spend||0) + (m.spend||0),
-        impressions: (acc.impressions||0) + (m.impressions||0),
-        clicks: (acc.clicks||0) + (m.clicks||0),
-      }), {});
-      return { ...c, metrics: agg };
-    });
-  }
-
-  if (!clients.length) { wrap.innerHTML = '<div class="empty"><div class="empty-icon">👥</div>No clients found</div>'; return; }
-
-  wrap.innerHTML = `<table>
-    <thead><tr><th>Client</th><th>Trade</th><th>City</th><th>Appts</th><th>Meta Leads</th><th>Spend</th><th>Status</th></tr></thead>
-    <tbody>${clients.map(c => {
-      const m = c.metrics || {};
-      const displayName = IS_DEMO ? `${c.trade} Contractor` : c.name;
-      return `<tr class="client-row" onclick="drillClient('${c.id}')">
-        <td style="font-weight:500">${displayName}</td>
-        <td><span class="badge badge-blue">${c.trade}</span></td>
-        <td style="color:var(--text2);font-size:12px">${c.city}</td>
-        <td style="font-family:var(--mono)">${m.appts_booked || 0}</td>
-        <td style="font-family:var(--mono)">${m.leads || 0}</td>
-        <td style="font-family:var(--mono)">$${(m.spend||0).toLocaleString()}</td>
-        <td>${(m.appts_booked||0) >= 15 ? '<span class="badge badge-green">On Track</span>' : '<span class="badge badge-yellow">In Progress</span>'}</td>
-      </tr>`;
-    }).join('')}</tbody>
-  </table>`;
-}
-
-async function drillClient(clientId) {
-  if (IS_DEMO) {
-    const gc = GUEST_CLIENTS.find(c => c.id === clientId);
-    CURRENT_CLIENT = gc ? { ...gc, metrics: getGuestMetrics(gc.id) } : DEMO_CLIENTS[0];
-  } else {
-    const { data } = await sb.from('clients').select('*').eq('id', clientId).single();
-    CURRENT_CLIENT = data;
-  }
-  showView('overview');
-}
-
-// ═══════════════════════════════════════════════
-// ADMIN: PORTFOLIO
-// ═══════════════════════════════════════════════
-async function loadAdminOverview() {
-  let clients, allMetrics;
-
-  if (IS_DEMO) {
-    clients = DEMO_CLIENTS;
-    allMetrics = Object.values(DEMO_METRICS);
-  } else {
-    const now = new Date();
-    const month = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
-    const [cRes, mRes] = await Promise.all([
-      sb.from('clients').select('*').eq('is_active', true),
-      sb.from('metrics').select('*').eq('month', month)
-    ]);
-    clients = cRes.data || [];
-    allMetrics = mRes.data || [];
-  }
-
-  const totAppts = allMetrics.reduce((s, m) => s + (m.appts_booked || 0), 0);
-  const totLeads = allMetrics.reduce((s, m) => s + (m.leads || 0), 0);
-  const totSpend = allMetrics.reduce((s, m) => s + (m.spend || 0), 0);
-  const totImpr = allMetrics.reduce((s, m) => s + (m.impressions || 0), 0);
-
-  // For guest/demo, show impressive all-time aggregate numbers
-  const dispAppts = IS_DEMO ? (totAppts + seededRand(SESSION_SEED+99, 600, 900)) : totAppts;
-  const dispLeads = IS_DEMO ? (totLeads + seededRand(SESSION_SEED+88, 800, 1400)) : totLeads;
-  const dispSpend = IS_DEMO ? (totSpend + seededRand(SESSION_SEED+77, 18000, 32000)) : totSpend;
-  const dispImpr  = IS_DEMO ? (totImpr + seededRand(SESSION_SEED+66, 900000, 1800000)) : totImpr;
-  const dispMRR   = IS_DEMO ? seededRand(SESSION_SEED+55, 38000, 52000) : clients.reduce((s,c) => s+(c.retainer_amount||0), 0);
-  const dispClients = IS_DEMO ? (clients.length + seededRand(SESSION_SEED+44, 14, 22)) : clients.length;
-
-  document.getElementById('admin-stat-grid').innerHTML = `
-    <div class="stat-card"><div class="stat-label">Active Clients</div><div class="stat-val copper">${dispClients}</div></div>
-    <div class="stat-card"><div class="stat-label">Total Appts</div><div class="stat-val">${dispAppts.toLocaleString()}</div><div class="stat-change">All time</div></div>
-    <div class="stat-card"><div class="stat-label">Meta Leads</div><div class="stat-val blue">${dispLeads.toLocaleString()}</div></div>
-    <div class="stat-card"><div class="stat-label">Total Ad Spend</div><div class="stat-val">$${dispSpend.toLocaleString()}</div></div>
-    <div class="stat-card"><div class="stat-label">Impressions</div><div class="stat-val">${fmtNum(dispImpr)}</div></div>
-    <div class="stat-card"><div class="stat-label">MRR</div><div class="stat-val green">$${dispMRR.toLocaleString()}</div></div>
-  `;
-
-  // Chart
-  destroyChart('chart-admin');
-  const ctx = document.getElementById('chart-admin').getContext('2d');
-  const clientMetrics = clients.map(c => {
-    const m = IS_DEMO ? (DEMO_METRICS[c.id] || {}) : (allMetrics.find(m => m.client_id === c.id) || {});
-    return { name: c.name.split(' ')[0], appts: m.appts_booked || 0 };
-  });
-
-  charts['chart-admin'] = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: clientMetrics.map(c => c.name),
-      datasets: [{
-        label: 'Appointments',
-        data: clientMetrics.map(c => c.appts),
-        backgroundColor: 'rgba(196,113,59,0.8)',
-        borderRadius: 4, borderSkipped: false,
-      }]
-    },
-    options: chartOpts()
-  });
-}
-
-// ═══════════════════════════════════════════════
-// HELPERS
-// ═══════════════════════════════════════════════
-function chartOpts() {
+/* ════════════════════════════════════════════════════════════
+   BUDGET TOOL  (per-client, saved to Supabase, auto-populated)
+   ════════════════════════════════════════════════════════════ */
+const TRADE_DEFAULTS={
+  HVAC:{bG:[20,35],bN:[8,15],avgJ:7800,mat:22,lab:28,sub:0,seas:[.7,.8,1,1.1,1.2,1.3,1.4,1.4,1.1,.9,.8,.7],oh:[['Service vehicles','Equipment',1800],['Tools & diagnostics','Equipment',400],['Liability insurance','Insurance',600],['Workers comp','Insurance',350],['Dispatch software','Software',250],['Office & admin','Admin',800]]},
+  Concrete:{bG:[25,40],bN:[10,20],avgJ:9500,mat:25,lab:30,sub:0,seas:[.5,.6,.8,1,1.2,1.3,1.3,1.2,1.1,1,.7,.4],oh:[['Trucks & trailers','Equipment',1600],['Forming equipment','Equipment',500],['Liability insurance','Insurance',700],['Workers comp','Insurance',450],['Fuel & maintenance','Operations',700]]},
+  Roofing:{bG:[20,40],bN:[8,15],avgJ:13500,mat:35,lab:25,sub:5,seas:[.6,.6,.8,1,1.2,1.2,1.2,1.2,1.2,1,.8,.6],oh:[['Trucks & trailers','Equipment',2400],['Safety equipment','Equipment',350],['Liability insurance','Insurance',1200],['Workers comp','Insurance',800],['Disposal fees','Operations',500]]},
+  Turfing:{bG:[30,50],bN:[15,25],avgJ:12500,mat:38,lab:22,sub:0,seas:[.7,.7,.9,1.1,1.2,1.3,1.3,1.2,1.1,1,.8,.6],oh:[['Trucks & trailers','Equipment',1600],['Install equipment','Equipment',500],['Liability insurance','Insurance',600],['Workers comp','Insurance',400],['Material storage','Operations',400]]},
+  Decking:{bG:[30,45],bN:[12,20],avgJ:16000,mat:32,lab:28,sub:0,seas:[.4,.5,.8,1.1,1.3,1.3,1.2,1.2,1,.8,.5,.4],oh:[['Trucks & trailers','Equipment',1400],['Power tools','Equipment',500],['Liability insurance','Insurance',650],['Workers comp','Insurance',400],['Lumber yard','Operations',200]]},
+  'Kitchen & Bath':{bG:[35,55],bN:[15,25],avgJ:28000,mat:25,lab:30,sub:5,seas:[.8,.8,1,1.1,1.1,1,1,1.1,1.1,1,.9,.8],oh:[['Showroom rent','Facility',2500],['Design software','Software',300],['Vehicles','Equipment',1200],['Liability insurance','Insurance',700],['Workers comp','Insurance',450],['Showroom samples','Operations',400]]},
+  Electrical:{bG:[25,45],bN:[10,18],avgJ:5500,mat:20,lab:35,sub:0,seas:[.9,.9,1,1,1.1,1.1,1.1,1.1,1,1,.9,.9],oh:[['Service vehicles','Equipment',1600],['Test equipment','Equipment',500],['Liability insurance','Insurance',700],['Workers comp','Insurance',500],['Licenses & permits','Compliance',200]]},
+  Service:{bG:[25,45],bN:[10,20],avgJ:8000,mat:25,lab:30,sub:0,seas:[1,1,1,1,1,1,1,1,1,1,1,1],oh:[['Vehicles','Equipment',1500],['Insurance','Insurance',600],['Workers comp','Insurance',400],['Software','Software',250],['Admin','Admin',600]]}
+};
+function tradeKey(trade){ return TRADE_DEFAULTS[trade]?trade:'Service'; }
+let bid=0;
+function defaultBudget(c){
+  const T=TRADE_DEFAULTS[tradeKey(c.trade)];
   return {
-    responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { display: false } },
-    scales: {
-      x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#555550', font: { family: 'JetBrains Mono', size: 10 } } },
-      y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#555550', font: { family: 'JetBrains Mono', size: 10 } } }
-    }
+    rev:c.revenue||0, cj:c.closed||0, otherRev:0, otherExp:0,
+    matPct:T.mat, labPct:T.lab, subPct:T.sub,
+    ohItems:T.oh.map(([n,cat,a])=>({id:bid++,n,c:cat,a})).concat([{id:bid++,n:'Hammer List retainer',c:'Marketing',a:2200}]),
+    jobType:'', jMat:Math.round(c.avgJob*T.mat/100)||0, jLab:Math.round(c.avgJob*T.lab/100)||0, tgtM:Math.round((T.bG[0]+T.bG[1])/2),
+    annGoal:Math.max(120000,(c.revenue||0)*12), cfAp:c.appts||8, cfCr:Math.round((c.closeRate||.25)*100),
+    btab:'pl'
   };
 }
-
-function destroyChart(id) {
-  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
-}
-
-function fmtDate(iso) {
-  if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-}
-
-function fmtNum(n) {
-  if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
-  if (n >= 1000) return (n/1000).toFixed(1) + 'K';
-  return n.toString();
-}
-
-function statusBadge(status) {
-  const s = (status || '').toLowerCase();
-  if (s === 'attended' || s === 'showed' || s === 'completed') return '<span class="badge badge-green">Showed</span>';
-  if (s === 'confirmed' || s === 'scheduled') return '<span class="badge badge-blue">Confirmed</span>';
-  if (s === 'cancelled' || s === 'noshow') return '<span class="badge badge-red">No Show</span>';
-  return `<span class="badge badge-gray">${status || 'Unknown'}</span>`;
-}
-
-function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-
-document.getElementById('email-input').addEventListener('keydown', e => e.key === 'Enter' && doLogin());
-document.getElementById('pass-input').addEventListener('keydown', e => e.key === 'Enter' && doLogin());
-
-// Init
-checkSession();
-
-// Auto-refresh demo data every hour (SESSION_SEED changes hourly)
-// For real users, re-sync every 30 min
-setInterval(() => {
-  if (IS_DEMO) {
-    // Regenerate demo data with new seed
-    location.reload();
-  } else if (CURRENT_USER) {
-    // Silently reload current view
-    const activeView = document.querySelector('.view.active');
-    if (activeView) {
-      const id = activeView.id.replace('view-', '');
-      if (id === 'overview') loadOverview();
-      if (id === 'admin-clients') loadAdminClients();
-      if (id === 'admin-overview') loadAdminOverview();
+async function renderBudget(){
+  const c=S.clients.find(x=>x.id===S.activeClientId);
+  if(!c){ goPortfolio(); return; }
+  el('view').innerHTML='<div class="spin"></div>';
+  if(!S.budget){
+    let saved=null;
+    if(!S.demo){
+      try{ const {data}=await sb.from(CONFIG.tables.budget).select('data').eq('client_id',c.id).maybeSingle(); if(data&&data.data) saved=data.data; }catch(e){}
     }
+    const base=defaultBudget(c);
+    S.budget = saved ? Object.assign(base,saved,{ohItems:(saved.ohItems||base.ohItems).map(o=>({id:bid++,n:o.n,c:o.c,a:o.a}))}) : base;
+    // always refresh live-sourced fields from current dashboard data
+    if(!saved){ S.budget.rev=c.revenue||0; S.budget.cj=c.closed||0; }
   }
-}, 30 * 60 * 1000); // every 30 minutes
+  drawBudget(c);
+}
+function bupd(k,v){
+  const num=['rev','cj','otherRev','otherExp','matPct','labPct','subPct','jMat','jLab','tgtM','annGoal','cfAp','cfCr'];
+  S.budget[k]= num.includes(k)? (Number(v)||0) : v;
+  const c=S.clients.find(x=>x.id===S.activeClientId);
+  drawBudget(c);
+}
+function bswitch(t){ S.budget.btab=t; drawBudget(S.clients.find(x=>x.id===S.activeClientId)); }
+function updOH(id,v){ const it=S.budget.ohItems.find(x=>x.id===id); if(it){it.a=Number(v)||0; drawBudget(S.clients.find(x=>x.id===S.activeClientId));} }
+function delOH(id){ S.budget.ohItems=S.budget.ohItems.filter(x=>x.id!==id); drawBudget(S.clients.find(x=>x.id===S.activeClientId)); }
+function addOH(){ S.budget.ohItems.push({id:bid++,n:'New item',c:'Other',a:0}); drawBudget(S.clients.find(x=>x.id===S.activeClientId)); setTimeout(()=>{const inp=document.querySelector('#oh-list .oh-name:last-child');if(inp)inp.focus();},30); }
+function updOHName(id,v){ const it=S.budget.ohItems.find(x=>x.id===id); if(it)it.n=v; }
+async function saveBudget(){
+  if(S.demo){ toast('Demo — not saved'); return; }
+  const c=S.clients.find(x=>x.id===S.activeClientId);
+  const payload={ client_id:c.id, data:S.budget, updated_at:new Date().toISOString() };
+  try{
+    const {error}=await sb.from(CONFIG.tables.budget).upsert(payload,{onConflict:'client_id'});
+    if(error) throw error;
+    toast('Saved ✓');
+  }catch(e){ toast('Save failed'); }
+}
+
+function budgetCalc(c){
+  const T=TRADE_DEFAULTS[tradeKey(c.trade)], b=S.budget;
+  const tRev=b.rev+b.otherRev;
+  const mC=Math.round(tRev*b.matPct/100),lC=Math.round(tRev*b.labPct/100),sC=Math.round(tRev*b.subPct/100);
+  const dC=mC+lC+sC,dPct=b.matPct+b.labPct+b.subPct;
+  const gp=tRev-dC,gm=tRev>0?Math.round(gp/tRev*100):0;
+  const tOH=b.ohItems.reduce((s,x)=>s+(Number(x.a)||0),0);
+  const ohPJ=b.cj>0?Math.round(tOH/b.cj):0;
+  const np=gp-tOH-b.otherExp,nm=tRev>0?Math.round(np/tRev*100):0;
+  const tjc=b.jMat+b.jLab+ohPJ;
+  const rp=b.tgtM<100?Math.round(tjc/(1-b.tgtM/100)):0;
+  const mkPct=tjc>0?Math.round((rp-tjc)/tjc*100):0;
+  const gpPJ=Math.round(T.avgJ*(1-dPct/100));
+  const beJ=gpPJ>0?Math.ceil(tOH/gpPJ):0;
+  const mGoal=Math.round(b.annGoal/12);
+  const gJ=gpPJ>0?Math.ceil((tOH+mGoal)/gpPJ):0;
+  const cfM=Array.from({length:6},(_,i)=>{
+    const mi=(TODAY.getMonth()+i)%12,s=T.seas[mi];
+    const ap=Math.round(b.cfAp*s),jo=Math.round(ap*b.cfCr/100),rv=jo*T.avgJ,dc=Math.round(rv*dPct/100);
+    return{month:MN[mi],rev:rv,costs:dc+tOH,net:rv-dc-tOH};
+  });
+  return{T,b,tRev,mC,lC,sC,dC,dPct,gp,gm,tOH,ohPJ,np,nm,tjc,rp,mkPct,gpPJ,beJ,mGoal,gJ,cfM};
+}
+
+function drawBudget(c){
+  const x=budgetCalc(c), b=S.budget;
+  const tabs=[['pl','P&L'],['oh','Overhead'],['markup','Markup'],['be','Break-even'],['cf','Cash flow']];
+  let html=`
+  ${S.isAdmin?'<button class="back" onclick="goPortfolio()">← Portfolio</button>':''}
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:4px">
+    <div><span class="serif" style="font-size:20px">Budget &amp; finance</span> <span class="trade" style="margin-left:6px">${esc(c.trade)}</span></div>
+    <button class="savebtn" onclick="saveBudget()">${S.demo?'Save (demo)':'Save'}</button>
+  </div>
+  <div class="sec-s">${esc(c.name)} · all calculations live · revenue &amp; jobs pulled from your dashboard</div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:15px">
+    ${tabs.map(([k,l])=>`<button onclick="bswitch('${k}')" style="padding:7px 14px;border-radius:100px;border:1px solid ${b.btab===k?'var(--green-l)':'var(--line-2)'};background:${b.btab===k?'var(--green)':'transparent'};color:${b.btab===k?'#fff':'var(--ink-2)'};font-size:12px;font-weight:500;cursor:pointer">${l}</button>`).join('')}
+  </div>
+  <div id="budget-body"></div>`;
+  el('view').innerHTML=html;
+  const body=el('budget-body');
+  if(b.btab==='pl') body.innerHTML=bPL(x);
+  else if(b.btab==='oh') body.innerHTML=bOH(x);
+  else if(b.btab==='markup') body.innerHTML=bMarkup(x);
+  else if(b.btab==='be') body.innerHTML=bBE(x);
+  else if(b.btab==='cf'){ body.innerHTML=bCF(x); drawCF(x); }
+}
+
+function bPL(x){
+  const{T,b,tRev,mC,lC,sC,dC,dPct,gp,gm,tOH,ohPJ,np,nm}=x;
+  const gBench=gm>=T.bG[0]?{c:'chip-on',t:'Above avg ✓'}:gm>=T.bG[0]*.75?{c:'chip-at',t:'Near avg'}:{c:'chip-bh',t:'Below avg'};
+  const nBench=np<0?{c:'chip-bh',t:'Loss'}:nm>=T.bN[0]?{c:'chip-on',t:'Above avg ✓'}:nm>=T.bN[0]*.75?{c:'chip-at',t:'Near avg'}:{c:'chip-bh',t:'Below avg'};
+  const sl=(k,lbl,val,max)=>`<div style="margin-bottom:11px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:11px;color:var(--ink-2)">${lbl}</span><span class="serif" style="font-size:13px">${b[k]}% · ${f$(val)}</span></div><input type="range" min="0" max="${max}" step="1" value="${b[k]}" oninput="bupd('${k}',this.value)"></div>`;
+  return `
+  <div class="card"><div class="sec-t" style="font-size:13px">Revenue <span style="font-size:10px;font-weight:400;color:var(--ok);background:var(--ok-bg);padding:2px 7px;border-radius:100px;margin-left:6px">auto-filled from dashboard</span></div>
+    <div class="grid3">
+      <div><span class="lbl">Closed job revenue</span><input class="inp serif" type="number" value="${b.rev}" oninput="bupd('rev',this.value)"></div>
+      <div><span class="lbl">Jobs closed</span><input class="inp serif" type="number" value="${b.cj}" oninput="bupd('cj',this.value)"></div>
+      <div><span class="lbl">Other revenue</span><input class="inp serif" type="number" value="${b.otherRev}" oninput="bupd('otherRev',this.value)"></div>
+    </div>
+  </div>
+  <div class="card"><div class="sec-t" style="font-size:13px">Direct costs</div>
+    ${sl('matPct','Materials',mC,70)}${sl('labPct','Labor',lC,70)}${sl('subPct','Subcontractors',sC,40)}
+    <div class="row" style="border-top:1px solid var(--line-2)"><span style="font-size:12px;font-weight:500">Total direct costs</span><span class="serif" style="font-size:14px">${f$(dC)} · ${fp(dPct)}</span></div>
+  </div>
+  <div class="grid2">
+    <div class="card gs"><span class="lbl">Gross profit</span><div class="num">${f$(gp)}</div><div style="margin-top:6px;display:flex;align-items:center;gap:7px"><span class="serif" style="font-size:14px;color:#173404">${fp(gm)}</span><span class="chip ${gBench.c}">${gBench.t}</span></div><div class="sub">industry avg ${T.bG[0]}–${T.bG[1]}%</div></div>
+    <div class="card"><span class="lbl">Net profit</span><div class="num" style="color:${np<0?'var(--bad)':'var(--ink)'}">${f$(np)}</div><div style="margin-top:6px;display:flex;align-items:center;gap:7px"><span class="serif" style="font-size:14px;color:${np<0?'var(--bad)':'var(--ink)'}">${fp(Math.abs(nm))}${nm<0?' loss':''}</span><span class="chip ${nBench.c}">${nBench.t}</span></div><div class="sub">after ${f$(tOH)} overhead · avg ${T.bN[0]}–${T.bN[1]}%</div></div>
+  </div>
+  <div class="card sur" style="display:flex;align-items:center;justify-content:space-between">
+    <div><span class="lbl">Monthly overhead</span><div class="serif" style="font-size:18px">${f$(tOH)}</div><div class="sub">${f$(ohPJ)} per closed job</div></div>
+    <button class="back" style="margin:0" onclick="bswitch('oh')">Edit →</button>
+  </div>
+  <div class="card"><div class="sec-t" style="font-size:13px">P&L summary</div>
+    ${[['Revenue',f$(tRev),'100%',false,false],['Direct costs','−'+f$(dC),fp(dPct),true,false],['Gross profit',f$(gp),fp(gm),false,true],['Overhead','−'+f$(tOH),'',true,false],['Other expenses','−'+f$(b.otherExp),'',true,false],['Net profit',f$(np),fp(Math.abs(nm))+(nm<0?' loss':''),false,true]].map(([l,v,p,m,bld])=>`<div class="row"><span style="font-size:12px;color:${m?'var(--ink-2)':'var(--ink)'};font-weight:${bld?500:400}">${l}</span><div style="text-align:right"><div class="serif" style="font-size:13px;font-weight:${bld?500:400};color:${l==='Net profit'?(np<0?'var(--bad)':'var(--green-l)'):'var(--ink)'}">${v}</div>${p?`<div style="font-size:9px;color:var(--ink-2)">${p}</div>`:''}</div></div>`).join('')}
+  </div>
+  <div style="margin-top:11px"><span class="lbl">Other expenses this month</span><div style="max-width:200px"><input class="inp serif" type="number" value="${b.otherExp}" oninput="bupd('otherExp',this.value)" placeholder="0"></div></div>`;
+}
+
+function bOH(x){
+  const{tOH,ohPJ,tRev,b}=x;
+  const pctRev=tRev>0?Math.round(tOH/tRev*100):0;
+  const cats=[...new Set(b.ohItems.map(i=>i.c))];
+  return `
+  <div class="grid3" style="margin-bottom:13px">
+    <div class="card gn"><span class="lbl">Monthly total</span><div class="num">${f$(tOH)}</div><div class="sub">fixed / month</div></div>
+    <div class="card"><span class="lbl">Per closed job</span><div class="num">${f$(ohPJ)}</div><div class="sub">allocation</div></div>
+    <div class="card"><span class="lbl">% of revenue</span><div class="num">${pctRev}%</div><div class="sub">overhead ratio</div></div>
+  </div>
+  <div class="card sur"><div style="font-size:12px;font-weight:500;margin-bottom:11px">By category</div>
+    ${cats.map(cat=>{const t=b.ohItems.filter(i=>i.c===cat).reduce((s,i)=>s+(Number(i.a)||0),0);const pct=tOH>0?Math.round(t/tOH*100):0;return`<div style="margin-bottom:9px"><div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:11px;color:var(--ink-2)">${esc(cat)}</span><span class="serif" style="font-size:12px">${f$(t)}</span></div><div class="prog-wrap"><div class="prog-fill" style="width:${pct}%"></div></div></div>`;}).join('')}
+  </div>
+  <div class="card"><div class="sec-t" style="font-size:13px;display:flex;justify-content:space-between"><span>Line items</span><span style="font-size:10px;font-weight:400;color:var(--ink-2)">${b.ohItems.length} items</span></div>
+    <div id="oh-list">
+    <div style="display:grid;grid-template-columns:1fr 120px 30px;gap:9px;padding-bottom:6px;border-bottom:1px solid var(--line)"><span class="th">Item</span><span class="th">$/month</span><span></span></div>
+    ${b.ohItems.map(it=>`<div style="display:grid;grid-template-columns:1fr 120px 30px;gap:9px;align-items:center;padding:7px 0;border-top:1px solid var(--line)">
+      <div><input class="inp oh-name" style="padding:5px 8px;font-size:12px;margin-bottom:2px" value="${esc(it.n)}" oninput="updOHName(${it.id},this.value)"><div style="font-size:9px;color:var(--ink-3);padding-left:2px">${esc(it.c)}</div></div>
+      <input class="inp serif" style="padding:6px 9px;font-size:13px" type="number" value="${it.a}" oninput="updOH(${it.id},this.value)">
+      <button class="delbtn" onclick="delOH(${it.id})" aria-label="Delete">×</button>
+    </div>`).join('')}
+    <div class="row" style="border-top:1px solid var(--line-2)"><span style="font-size:12px;font-weight:500">Total</span><span class="serif" style="font-size:17px">${f$(tOH)}/mo</span></div>
+    </div>
+    <button class="addbtn" onclick="addOH()">+ Add overhead item</button>
+  </div>`;
+}
+
+function bMarkup(x){
+  const{T,b,ohPJ,tjc,rp,mkPct}=x;
+  return `
+  <div class="card sur"><div class="sec-t" style="font-size:13px;border:none;padding:0">Job details</div>
+    <div style="margin-bottom:11px"><span class="lbl">Job type / name</span><input class="inp" style="font-size:13px" type="text" value="${esc(b.jobType)}" oninput="bupd('jobType',this.value)" placeholder="e.g. Full A/C replacement"></div>
+    <div class="grid2" style="margin-bottom:11px">
+      <div><span class="lbl">Materials cost</span><input class="inp serif" type="number" value="${b.jMat}" oninput="bupd('jMat',this.value)"></div>
+      <div><span class="lbl">Labor cost</span><input class="inp serif" type="number" value="${b.jLab}" oninput="bupd('jLab',this.value)"></div>
+    </div>
+    ${[['Materials',b.jMat,false],['Labor',b.jLab,false],['Overhead allocation',ohPJ,true]].map(([l,v,m])=>`<div class="row"><span style="font-size:11px;color:${m?'var(--ink-2)':'var(--ink)'}">${l}</span><span class="serif" style="font-size:12px;color:${m?'var(--ink-2)':'var(--ink)'}">${f$(v)}</span></div>`).join('')}
+    <div class="row" style="border-top:1px solid var(--ok-br)"><span style="font-size:12px;font-weight:500">Total cost</span><span class="serif" style="font-size:15px">${f$(tjc)}</span></div>
+  </div>
+  <div class="card"><div style="font-size:12px;font-weight:500;margin-bottom:11px">Target gross margin</div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:11px;color:var(--ink-2)">Target</span><span class="serif" style="font-size:14px">${b.tgtM}%</span></div>
+    <input type="range" min="5" max="75" step="1" value="${b.tgtM}" oninput="bupd('tgtM',this.value)">
+    <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--ink-2);margin-top:4px"><span>5%</span><span>avg ${T.bG[0]}–${T.bG[1]}%</span><span>75%</span></div>
+  </div>
+  <div class="card gn"><div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
+    <div><span class="lbl">Recommended bid${b.jobType?' · '+esc(b.jobType):''}</span><div class="serif" style="font-size:30px;color:#fff;line-height:1">${f$(rp)}</div><div class="sub">${b.tgtM}% margin · ${mkPct}% markup on cost</div></div>
+    <div style="text-align:right"><div class="lbl">Break-even</div><div class="serif" style="font-size:18px;color:#B7D5C4">${f$(tjc)}</div><div class="sub">no margin</div></div>
+  </div>
+    <div style="margin-top:13px;padding-top:11px;border-top:1px solid rgba(255,255,255,.12);display:flex;justify-content:space-between"><span class="sub" style="margin:0">Profit on this job</span><span class="serif" style="color:#D8EDE0;font-size:15px">${f$(rp-tjc)}</span></div>
+  </div>
+  <div class="alert" style="background:var(--surface-2);border:none;color:var(--ink-2)"><span>ℹ</span><div>Overhead allocation uses ${b.cj} closed jobs this month. The more jobs you close, the lower your per-job overhead — so margins improve without raising your price.</div></div>`;
+}
+
+function bBE(x){
+  const{T,b,tOH,gpPJ,beJ,gJ,mGoal,dPct}=x;
+  const cTrade=tradeKey(S.clients.find(y=>y.id===S.activeClientId).trade);
+  const maxJ=Math.max(gJ+4,b.cj+2,beJ+5,15);
+  const barCol=b.cj>=gJ?'var(--green-l)':b.cj>=beJ?'var(--accent)':'#E24B4A';
+  const pct=v=>Math.min(Math.round(v/maxJ*100),99);
+  let alert;
+  if(b.cj<beJ) alert=`<div class="alert alert-bad" style="margin-top:24px"><span>⚠</span><div><strong>${beJ-b.cj} more job${beJ-b.cj!==1?'s':''}</strong> needed to cover overhead this month.</div></div>`;
+  else if(b.cj<gJ) alert=`<div class="alert alert-warn" style="margin-top:24px"><span>◐</span><div>Overhead covered ✓ — <strong>${gJ-b.cj} more job${gJ-b.cj!==1?'s':''}</strong> to hit your income target.</div></div>`;
+  else alert=`<div class="alert alert-ok" style="margin-top:24px"><span>✓</span><div>Income target on track — every extra job this month is pure profit.</div></div>`;
+  return `
+  <div class="grid2" style="margin-bottom:13px">
+    <div class="card"><span class="lbl">Avg job value (${esc(cTrade)})</span><div class="num">${f$(T.avgJ)}</div><div class="sub">trade default</div></div>
+    <div class="card gs"><span class="lbl">Gross profit / job</span><div class="num">${f$(gpPJ)}</div><div class="sub">after ${dPct}% direct costs</div></div>
+  </div>
+  <div class="card sur"><div style="font-size:12px;font-weight:500;margin-bottom:9px">Break-even calculation</div>
+    ${[['Monthly overhead',f$(tOH)],['Gross profit per job',f$(gpPJ)]].map(([l,v])=>`<div class="row"><span style="font-size:11px;color:var(--ink-2)">${l}</span><span class="serif" style="font-size:12px">${v}</span></div>`).join('')}
+    <div class="row"><span style="font-size:12px;font-weight:500">Jobs to break even</span><span class="serif" style="font-size:17px;color:var(--green-l)">${beJ} / month</span></div>
+  </div>
+  <div class="card"><div style="font-size:12px;font-weight:500;margin-bottom:11px">Income goal</div>
+    <div style="margin-bottom:11px"><span class="lbl">Annual income target</span><div style="max-width:210px"><input class="inp serif" type="number" value="${b.annGoal}" oninput="bupd('annGoal',this.value)"></div></div>
+    <div class="card sur" style="margin:0"><div class="sub" style="margin:0 0 2px">To cover overhead + hit this goal</div><div class="serif" style="font-size:22px">${gJ} jobs/month</div><div class="sub">${f$(mGoal)}/mo · ${Math.max(0,gJ-beJ)} jobs above break-even</div></div>
+  </div>
+  <div class="card"><div style="font-size:12px;font-weight:500;margin-bottom:16px">Monthly jobs tracker</div>
+    <div style="position:relative;background:var(--surface-2);border-radius:100px;height:12px">
+      <div style="width:${Math.min(Math.round(b.cj/maxJ*100),100)}%;height:100%;background:${barCol};border-radius:100px;transition:width .4s"></div>
+      <div style="position:absolute;top:-3px;left:${pct(beJ)}%;width:2px;height:18px;background:#E24B4A"><span style="position:absolute;top:20px;left:-12px;font-size:8px;color:var(--bad);white-space:nowrap">BE: ${beJ}</span></div>
+      <div style="position:absolute;top:-3px;left:${pct(gJ)}%;width:2px;height:18px;background:var(--green-l)"><span style="position:absolute;top:20px;left:-14px;font-size:8px;color:var(--green-l);white-space:nowrap">Goal: ${gJ}</span></div>
+    </div>
+    <div style="margin-top:30px;display:flex;justify-content:space-between;font-size:10px;color:var(--ink-2)"><span>0</span><span style="font-weight:500;color:var(--ink)">Now: ${b.cj} jobs</span><span>${maxJ}</span></div>
+    ${alert}
+  </div>`;
+}
+
+function bCF(x){
+  const{T,b,cfM,tOH}=x;
+  const gaps=cfM.filter(r=>r.net<0).map(r=>r.month);
+  return `
+  <div class="card sur"><div style="font-size:12px;font-weight:500;margin-bottom:12px">Projection inputs</div>
+    <div class="grid2" style="margin-bottom:11px">
+      <div><span class="lbl">Appointments / month</span><input class="inp serif" type="number" value="${b.cfAp}" oninput="bupd('cfAp',this.value)"></div>
+      <div><span class="lbl">Close rate %</span><input class="inp serif" type="number" value="${b.cfCr}" oninput="bupd('cfCr',this.value)"></div>
+    </div>
+    <div style="padding:7px 10px;background:var(--line);border-radius:6px;font-size:10px;color:var(--ink-2)">Seasonal pattern for ${esc(tradeKey(S.clients.find(y=>y.id===S.activeClientId).trade))} · avg job ${f$(T.avgJ)} · overhead ${f$(tOH)}/mo</div>
+  </div>
+  <div class="card"><div class="sec-t" style="font-size:13px">6-month forecast</div><div class="sec-s">Revenue vs total costs · seasonal pattern applied</div>
+    <div style="position:relative;height:175px"><canvas id="cv-cf" role="img" aria-label="6 month revenue vs costs">Forecast.</canvas></div>
+    <div style="display:flex;gap:14px;margin-top:10px;font-size:10px;color:var(--ink-2)"><span style="display:flex;align-items:center;gap:5px"><span style="width:9px;height:9px;border-radius:2px;background:#2D6A4F"></span>Revenue</span><span style="display:flex;align-items:center;gap:5px"><span style="width:9px;height:9px;border-radius:2px;background:#C4713B"></span>Total costs</span></div>
+  </div>
+  <div class="card"><div class="sec-t" style="font-size:13px">Monthly breakdown</div>
+    <div style="display:grid;grid-template-columns:52px 1fr 1fr 1fr;gap:8px;padding-bottom:6px;border-bottom:1px solid var(--line)"><span class="th">Month</span><span class="th" style="text-align:right">Revenue</span><span class="th" style="text-align:right">Costs</span><span class="th" style="text-align:right">Net</span></div>
+    ${cfM.map((r,i)=>`<div style="display:grid;grid-template-columns:52px 1fr 1fr 1fr;gap:8px;padding:7px 0;border-top:1px solid var(--line);align-items:center"><span style="font-size:11px;font-weight:${i===0?500:400};color:${i===0?'var(--green-l)':'var(--ink)'}">${r.month}${i===0?' ▸':''}</span><span class="serif" style="font-size:12px;text-align:right">${f$(r.rev)}</span><span class="serif" style="font-size:12px;text-align:right;color:var(--ink-2)">${f$(r.costs)}</span><span class="serif" style="font-size:12px;text-align:right;color:${r.net>=0?'var(--green-l)':'var(--bad)'}">${f$(r.net)}</span></div>`).join('')}
+  </div>
+  ${gaps.length?`<div class="alert alert-warn"><span>⚠</span><div><strong>Cash gap in ${gaps.join(', ')}</strong> — pre-book before the slow period or pull ad spend forward.</div></div>`:`<div class="alert alert-ok"><span>✓</span><div>No cash gaps projected in this 6-month window. Seasonal pattern looks stable.</div></div>`}`;
+}
+let chCF=null;
+function drawCF(x){
+  const cv=el('cv-cf'); if(!cv||!window.Chart) return;
+  const ex=window.Chart.getChart(cv); if(ex) ex.destroy();
+  chCF=new window.Chart(cv,{type:'bar',data:{labels:x.cfM.map(r=>r.month),datasets:[
+    {label:'Revenue',data:x.cfM.map(r=>r.rev),backgroundColor:'rgba(45,106,79,.22)',borderColor:'#2D6A4F',borderWidth:1.5,borderRadius:3},
+    {label:'Costs',data:x.cfM.map(r=>r.costs),backgroundColor:'rgba(196,113,59,.18)',borderColor:'#C4713B',borderWidth:1.5,borderRadius:3}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:10},color:'#8A968E'},border:{display:false}},y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{font:{size:10},color:'#8A968E',callback:v=>'$'+(v>=1000?Math.round(v/1000)+'k':v)},border:{display:false}}}}});
+}
+
+/* allow Enter to submit login */
+document.addEventListener('keydown',e=>{ if(e.key==='Enter'&&el('login').style.display!=='none') doLogin(); });
+
+init();
 </script>
 </body>
 </html>
