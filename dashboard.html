@@ -247,13 +247,33 @@ const sb = window.supabase.createClient(CONFIG.url, CONFIG.anonKey);
 /* ---------- session state ---------- */
 const S = {
   demo:false, isAdmin:false, user:null,
-  clients:[], activeClientId:null, tab:'overview', budget:null
+  clients:[], activeClientId:null, tab:'overview', budget:null,
+  period:null, customStart:'', customEnd:''
 };
 
 const MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const TODAY = new Date();
 const DPM = new Date(TODAY.getFullYear(),TODAY.getMonth()+1,0).getDate();
 const DAY = TODAY.getDate();
+
+/* ---------- date period ---------- */
+function makePeriod(key, cs, ce){
+  const y=TODAY.getFullYear(), m=TODAY.getMonth();
+  let start,end,label,months,live=false;
+  if(key==='last_month'){ start=new Date(y,m-1,1); end=new Date(y,m,0); label='Last month'; months=1; }
+  else if(key==='last_3'){ start=new Date(y,m-2,1); end=new Date(y,m+1,0); label='Last 3 months'; months=3; live=true; }
+  else if(key==='last_6'){ start=new Date(y,m-5,1); end=new Date(y,m+1,0); label='Last 6 months'; months=6; live=true; }
+  else if(key==='ytd'){ start=new Date(y,0,1); end=new Date(y,m+1,0); label='Year to date'; months=m+1; live=true; }
+  else if(key==='custom'){ start=new Date(cs); end=new Date(ce); label='Custom range'; months=Math.max(1,Math.round((end-start)/2592000000)); }
+  else { key='this_month'; start=new Date(y,m,1); end=new Date(y,m+1,0); label='This month'; months=1; live=true; }
+  const len=end-start;
+  const prevEnd=new Date(start.getTime()-86400000);
+  const prevStart=new Date(start.getTime()-len);
+  return {key,start,end,prevStart,prevEnd,label,months,live};
+}
+const PERIOD_OPTS=[['this_month','This month'],['last_month','Last month'],['last_3','Last 3 months'],['last_6','Last 6 months'],['ytd','Year to date'],['custom','Custom range']];
+function dISO(d){ return d.toISOString(); }
+function dDATE(d){ return d.toISOString().slice(0,10); }
 
 /* ---------- formatters ---------- */
 const f$=n=>{n=Number(n)||0;const a=Math.abs(n),s=n<0?'-':'';if(a>=100000)return s+'$'+Math.round(a/1000)+'k';if(a>=1000)return s+'$'+(a/1000).toFixed(1)+'k';return s+'$'+Math.round(a);};
@@ -309,9 +329,29 @@ function enterDemo(){
   el('login').style.display='none'; el('app').style.display='block';
   el('demo-badge').classList.remove('hidden');
   el('av').textContent='D'; el('menu-email').textContent='Demo mode';
+  S.period=makePeriod('this_month');
   S.clients = demoClients();
+  S.clients.forEach(c=>c._base={appts:c.appts,spend:c.spend,closed:c.closed,revenue:c.revenue});
   S.activeClientId=null; S.tab='overview';
   renderShell(); routeAdminOrClient();
+}
+function recomputeDemoForPeriod(){
+  const mult=S.period.months;
+  S.clients.forEach(c=>{
+    const b=c._base||{appts:c.appts,spend:c.spend,closed:c.closed,revenue:c.revenue};
+    c.appts=Math.round(b.appts*mult);
+    c.spend=Math.round(b.spend*mult);
+    c.closed=Math.round(b.closed*mult);
+    c.revenue=Math.round(b.revenue*mult);
+    c.closeRate=c.appts>0?c.closed/c.appts:0;
+    c.prev={appts:Math.round(c.appts*.82),spend:Math.round(c.spend*.9),closed:Math.max(0,c.closed-1),revenue:Math.round(c.revenue*.85)};
+    c.weekly = mult<=1 ? demoWeekly(c.appts,c.spend) : demoMonthly(c.appts);
+  });
+}
+function demoMonthly(appts){
+  const P=S.period; const out=[]; let cur=new Date(P.start.getFullYear(),P.start.getMonth(),1); const n=P.months;
+  for(let i=0;i<n && cur<=P.end;i++){ out.push({w:MN[cur.getMonth()],a:Math.round(appts/n*(0.8+Math.random()*0.4))}); cur=new Date(cur.getFullYear(),cur.getMonth()+1,1); }
+  return out;
 }
 function demoClients(){
   // fictional, isolated cities, demo revenue > $60k/mo
@@ -354,6 +394,7 @@ function demoCampaigns(trade,spend,appts){
    LIVE DATA LOAD
    ════════════════════════════════════════════════════════════ */
 async function loadData(){
+  if(!S.period) S.period = makePeriod('this_month');
   el('view').innerHTML='<div class="spin"></div>';
   try{
     const {data:clients,error} = await sb.from(CONFIG.tables.clients).select('*');
@@ -365,44 +406,71 @@ async function loadData(){
     }
     S.clients = enriched;
     // non-admin with exactly one client → jump straight to their view
-    if(!S.isAdmin && enriched.length===1){ S.activeClientId=enriched[0].id; S.tab='overview'; }
-    else { S.activeClientId=null; S.tab='overview'; }
+    if(!S.isAdmin && enriched.length===1){ S.activeClientId=enriched[0].id; }
     renderShell();
     routeAdminOrClient();
   }catch(e){
     el('view').innerHTML=`<div class="empty"><div class="ico">⚠</div><div>Couldn't load your data.<br><span class="muted" style="font-size:12px">${esc(e.message||e)}</span></div></div>`;
   }
 }
+function onPeriodChange(key){
+  if(key==='custom'){ S.period=makePeriod('custom', S.customStart||dDATE(new Date(TODAY.getFullYear(),TODAY.getMonth()-2,1)), S.customEnd||dDATE(TODAY)); }
+  else S.period=makePeriod(key);
+  if(S.demo){ recomputeDemoForPeriod(); renderShell(); routeAdminOrClient(); }
+  else loadData();
+}
+function applyCustom(){
+  if(!S.customStart||!S.customEnd) return;
+  S.period=makePeriod('custom',S.customStart,S.customEnd);
+  if(S.demo){ recomputeDemoForPeriod(); renderShell(); routeAdminOrClient(); }
+  else loadData();
+}
+function periodBar(){
+  const isCustom=S.period.key==='custom';
+  return `<div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:14px">
+    <span style="font-size:11px;color:var(--ink-2)"><i class="ti ti-calendar"></i> Period</span>
+    <select onchange="onPeriodChange(this.value)" style="padding:7px 11px;border:1px solid var(--line-2);border-radius:var(--r-sm);font-size:13px;background:var(--surface);color:var(--ink);outline:none;cursor:pointer">
+      ${PERIOD_OPTS.map(([k,l])=>`<option value="${k}" ${S.period.key===k?'selected':''}>${l}</option>`).join('')}
+    </select>
+    ${isCustom?`<input type="date" value="${S.customStart||''}" onchange="S.customStart=this.value" style="padding:6px 9px;border:1px solid var(--line-2);border-radius:var(--r-sm);font-size:12px;background:var(--surface);color:var(--ink)">
+    <span style="color:var(--ink-2)">→</span>
+    <input type="date" value="${S.customEnd||''}" onchange="S.customEnd=this.value" style="padding:6px 9px;border:1px solid var(--line-2);border-radius:var(--r-sm);font-size:12px;background:var(--surface);color:var(--ink)">
+    <button class="back" style="margin:0" onclick="applyCustom()">Apply</button>`:''}
+  </div>`;
+}
 
 async function enrichClient(c){
   const cid=c.id;
-  const monthStart=new Date(TODAY.getFullYear(),TODAY.getMonth(),1).toISOString();
-  const prevStart=new Date(TODAY.getFullYear(),TODAY.getMonth()-1,1).toISOString();
-  // appointments this month
+  const P=S.period;
+  const startISO=dISO(P.start), endISO=dISO(P.end);
+  const startD=dDATE(P.start), endD=dDATE(P.end);
+  const pStartISO=dISO(P.prevStart), pEndISO=dISO(P.prevEnd);
+  const pStartD=dDATE(P.prevStart), pEndD=dDATE(P.prevEnd);
+  // appointments in window
   let appts=[],prevAppts=[];
   try{
-    const {data}=await sb.from(CONFIG.tables.appointments).select('*').eq('client_id',cid).gte(CONFIG.cols.apptAt,monthStart);
+    const {data}=await sb.from(CONFIG.tables.appointments).select('*').eq('client_id',cid).gte(CONFIG.cols.apptAt,startISO).lte(CONFIG.cols.apptAt,endISO);
     appts=data||[];
-    const {data:pd}=await sb.from(CONFIG.tables.appointments).select('*').eq('client_id',cid).gte(CONFIG.cols.apptAt,prevStart).lt(CONFIG.cols.apptAt,monthStart);
+    const {data:pd}=await sb.from(CONFIG.tables.appointments).select('*').eq('client_id',cid).gte(CONFIG.cols.apptAt,pStartISO).lte(CONFIG.cols.apptAt,pEndISO);
     prevAppts=pd||[];
   }catch(e){}
-  // metrics (spend) this month
+  // metrics: spend, column is 'month' (date)
   let spend=0,prevSpend=0;
   try{
-    const {data}=await sb.from(CONFIG.tables.metrics).select('*').eq('client_id',cid).gte('date',monthStart.slice(0,10));
+    const {data}=await sb.from(CONFIG.tables.metrics).select('*').eq('client_id',cid).gte('month',startD).lte('month',endD);
     spend=(data||[]).reduce((s,m)=>s+(Number(m[CONFIG.cols.spend])||0),0);
-    const {data:pd}=await sb.from(CONFIG.tables.metrics).select('*').eq('client_id',cid).gte('date',prevStart.slice(0,10)).lt('date',monthStart.slice(0,10));
+    const {data:pd}=await sb.from(CONFIG.tables.metrics).select('*').eq('client_id',cid).gte('month',pStartD).lte('month',pEndD);
     prevSpend=(pd||[]).reduce((s,m)=>s+(Number(m[CONFIG.cols.spend])||0),0);
   }catch(e){}
-  // closed jobs this month
+  // closed_jobs: closed_date (date), job_value (numeric)
   let closed=0,revenue=0,prevClosed=0,prevRev=0;
   try{
     const {data}=await sb.from(CONFIG.tables.closedJobs).select('*').eq('client_id',cid);
     (data||[]).forEach(j=>{
-      const d=new Date(j.closed_at||j.date||j.created_at||0);
-      const val=Number(j.value||j.revenue||j.amount||0);
-      if(d>=new Date(monthStart)){closed++;revenue+=val;}
-      else if(d>=new Date(prevStart)){prevClosed++;prevRev+=val;}
+      const d=new Date(j.closed_date||j.created_at||0);
+      const val=Number(j.job_value||0);
+      if(d>=P.start && d<=P.end){closed++;revenue+=val;}
+      else if(d>=P.prevStart && d<=P.prevEnd){prevClosed++;prevRev+=val;}
     });
   }catch(e){}
 
@@ -418,7 +486,7 @@ async function enrichClient(c){
     closeRate:apptCount>0?closed/apptCount:0,
     prev:{appts:prevAppts.length,spend:prevSpend,closed:prevClosed,revenue:prevRev},
     appointments:appts.map(mapAppt).sort((a,b)=>b._d-a._d).slice(0,8),
-    weekly:weeklyFrom(appts,spend),
+    weekly:bucketAppts(appts,spend),
     campaigns:[]
   };
 }
@@ -428,25 +496,41 @@ function mapAppt(a){
   const raw=(a.status||'').toLowerCase();
   if(d<TODAY){ st = raw.includes('clos')||raw.includes('won')?'cl': raw.includes('no')?'ns':'cf'; }
   else { st='pe'; }
-  return {_d:d,date:MN[d.getMonth()]+' '+d.getDate(),name:a.contact_name||a.name||'Contact',type:a.type||a.service||'Appointment',status:st};
+  return {_d:d,date:MN[d.getMonth()]+' '+d.getDate(),name:a.contact_name||a.name||'Contact',type:a.notes||'Appointment',status:st};
 }
-function weeklyFrom(appts,spend){
-  const w=[0,0,0,0];
-  appts.forEach(a=>{const day=new Date(a[CONFIG.cols.apptAt]||0).getDate();const wi=Math.min(3,Math.floor((day-1)/7));w[wi]++;});
-  return w.map((a,i)=>({w:'Wk '+(i+1),a,s:Math.round(spend/4)}));
+// buckets appointments by week (single month) or by month (multi-month) for the chart
+function bucketAppts(appts,spend){
+  const P=S.period;
+  if(P.months<=1){
+    const w=[0,0,0,0];
+    appts.forEach(a=>{const day=new Date(a[CONFIG.cols.apptAt]||0).getDate();w[Math.min(3,Math.floor((day-1)/7))]++;});
+    return w.map((a,i)=>({w:'Wk '+(i+1),a}));
+  }
+  const buckets={};
+  const order=[];
+  let cur=new Date(P.start.getFullYear(),P.start.getMonth(),1);
+  while(cur<=P.end){ const k=MN[cur.getMonth()]; buckets[k]=0; order.push(k); cur=new Date(cur.getFullYear(),cur.getMonth()+1,1); }
+  appts.forEach(a=>{const d=new Date(a[CONFIG.cols.apptAt]||0);const k=MN[d.getMonth()];if(k in buckets)buckets[k]++;});
+  return order.map(k=>({w:k,a:buckets[k]}));
 }
 
 /* ════════════════════════════════════════════════════════════
    PACE / HEALTH
    ════════════════════════════════════════════════════════════ */
-function pace(appts){
-  const proj = DAY>0 ? Math.round(appts/DAY*DPM*10)/10 : 0;
-  const t=CONFIG.guarantee;
-  let st,col,pc;
-  if(proj>=t){st='On track';col='#3B6D11';pc='on';}
-  else if(proj>=t*.8){st='At risk';col='#BA7517';pc='at';}
-  else{st='Behind';col='#A32D2D';pc='bh';}
-  return {proj,st,col,pc,rem:DPM-DAY,needed:Math.max(0,t-appts)};
+function pace(appts, p){
+  p = p || S.period;
+  const target = Math.max(1, Math.round(CONFIG.guarantee * p.months));
+  let proj=null, ref, st, col, pc;
+  if(p.key==='this_month'){
+    proj = DAY>0 ? Math.round(appts/DAY*DPM*10)/10 : 0;
+    ref = proj;
+  } else {
+    ref = appts;
+  }
+  if(ref>=target){ st = p.key==='this_month'?'On track':'Met'; col='#3B6D11'; pc='on'; }
+  else if(ref>=target*.8){ st = p.key==='this_month'?'At risk':'Close'; col='#BA7517'; pc='at'; }
+  else { st = p.key==='this_month'?'Behind':'Below'; col='#A32D2D'; pc='bh'; }
+  return {target, proj, st, col, pc, rem: p.key==='this_month'?DPM-DAY:0, needed:Math.max(0,target-appts)};
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -504,12 +588,13 @@ function renderPortfolio(){
 
   let html=`
   <div class="sec-t">Portfolio overview</div>
-  <div class="sec-s">${MN[TODAY.getMonth()]} ${TODAY.getFullYear()} · ${cs.length} active client${cs.length!==1?'s':''}</div>
+  <div class="sec-s">${S.period.label} · ${cs.length} active client${cs.length!==1?'s':''}</div>
+  ${periodBar()}
   <div class="grid4" style="margin-bottom:15px">
-    <div class="card"><span class="lbl">Appointments</span><div class="num">${fN(tot.appts)}</div><div class="mc-m">${deltaHtml(tot.appts,prev.appts)}<span class="sub" style="margin:0">vs last month</span></div></div>
+    <div class="card"><span class="lbl">Appointments</span><div class="num">${fN(tot.appts)}</div><div class="mc-m">${deltaHtml(tot.appts,prev.appts)}<span class="sub" style="margin:0">vs prev period</span></div></div>
     <div class="card"><span class="lbl">Ad spend</span><div class="num">${f$(tot.spend)}</div><div class="mc-m">${deltaHtml(tot.spend,prev.spend,true)}<span class="sub" style="margin:0">meta ads</span></div></div>
     <div class="card gn"><span class="lbl">Revenue</span><div class="num">${f$(tot.revenue)}</div><div class="mc-m">${deltaHtml(tot.revenue,prev.revenue)}<span class="sub" style="margin:0">closed jobs</span></div></div>
-    <div class="card"><span class="lbl">Closed jobs</span><div class="num">${fN(tot.closed)}</div><div class="sub">won this month</div></div>
+    <div class="card"><span class="lbl">Closed jobs</span><div class="num">${fN(tot.closed)}</div><div class="sub">${S.period.label.toLowerCase()}</div></div>
   </div>
   <div class="card gs" style="margin-bottom:17px;display:flex;align-items:center;gap:24px;flex-wrap:wrap">
     <div><span class="lbl">Portfolio ROAS</span><div class="num serif" style="font-size:30px">${roas}×</div><div class="sub">${'$'+roas} revenue per $1 ad spend</div></div>
@@ -523,7 +608,7 @@ function renderPortfolio(){
     const p=pace(c.appts);
     const cpa=c.appts>0?Math.round(c.spend/c.appts):0;
     const roasC=c.spend>0?(c.revenue/c.spend).toFixed(1):'0';
-    const frac=Math.min(c.appts/CONFIG.guarantee,1);
+    const frac=Math.min(c.appts/p.target,1);
     const circ=2*Math.PI*17, off=(circ*(1-frac)).toFixed(1);
     html+=`
     <div class="cc ${p.pc==='at'?'at':p.pc==='bh'?'bh':''}" onclick="goClient('${c.id}')">
@@ -534,7 +619,7 @@ function renderPortfolio(){
           <circle cx="23" cy="23" r="17" fill="none" stroke="${p.col}" stroke-width="5" stroke-linecap="round" stroke-dasharray="${circ.toFixed(1)}" stroke-dashoffset="${off}" transform="rotate(-90 23 23)"/>
           <text x="23" y="28" text-anchor="middle" class="serif" fill="${p.col}" style="font-size:13px">${c.appts}</text>
         </svg>
-        <div><div class="cc-ring-a">${c.appts} of ${CONFIG.guarantee} appts</div><div class="cc-ring-p">Pace ${p.proj} · ${p.rem}d left</div></div>
+        <div><div class="cc-ring-a">${c.appts} of ${p.target} appts</div><div class="cc-ring-p">${p.proj!=null?'Pace '+p.proj+' · '+p.rem+'d left':S.period.label}</div></div>
       </div>
       <div class="cc-mini">
         <div><div class="cc-mini-l">Spend</div><div class="cc-mini-v">${f$(c.spend)}</div></div>
@@ -564,10 +649,11 @@ function renderClientView(){
   const pipe=Math.round((c.appts-c.closed)*c.avgJob);
   const dr=DAY>0?(c.appts/DAY).toFixed(1):0;
   const nd=p.rem>0?(p.needed/p.rem).toFixed(1):0;
-  const r=62,circ=2*Math.PI*r,off=(circ*(1-Math.min(c.appts/CONFIG.guarantee,1))).toFixed(1);
+  const r=62,circ=2*Math.PI*r,off=(circ*(1-Math.min(c.appts/p.target,1))).toFixed(1);
+  const isLive = S.period.key==='this_month';
 
   const metrics=[
-    {l:'Appointments',v:fN(c.appts),d:deltaHtml(c.appts,c.prev.appts),s:'this month'},
+    {l:'Appointments',v:fN(c.appts),d:deltaHtml(c.appts,c.prev.appts),s:'this period'},
     {l:'Ad spend',v:f$(c.spend),d:deltaHtml(c.spend,c.prev.spend,true),s:'meta ads'},
     {l:'Cost / appt',v:'$'+cpa,d:'',s:'per booking'},
     {l:'Closed jobs',v:fN(c.closed),d:deltaHtml(c.closed,c.prev.closed),s:'won deals',g:true},
@@ -597,7 +683,7 @@ function renderClientView(){
 
   const noShows=c.appointments.filter(a=>a.status==='ns').length;
   const nsRate=c.appointments.length?noShows/c.appointments.length:0;
-  const nsAlert=nsRate>0.10?`<div class="alert alert-warn" style="margin-top:13px"><span>⚠</span><div><strong>No-show rate is ${fp(nsRate*100)} this month</strong> — above the 8–10% norm. A double-confirmation sequence in GHL would recover most of these.</div></div>`:'';
+  const nsAlert=nsRate>0.10?`<div class="alert alert-warn" style="margin-top:13px"><span>⚠</span><div><strong>No-show rate is ${fp(nsRate*100)}</strong> — above the 8–10% norm. A double-confirmation sequence in GHL would recover most of these.</div></div>`:'';
 
   let html=`
   ${S.isAdmin?'<button class="back" onclick="goPortfolio()">← Portfolio</button>':''}
@@ -606,23 +692,30 @@ function renderClientView(){
     <span class="trade">${esc(c.trade)}</span>
     <span class="chip chip-${p.pc}">${p.st}</span>
   </div>
-  <div class="sec-s">${[esc(c.city),esc(c.owner)].filter(Boolean).join(' · ')} · ${MN[TODAY.getMonth()]} ${TODAY.getFullYear()}</div>
+  <div class="sec-s">${[esc(c.city),esc(c.owner)].filter(Boolean).join(' · ')} · ${S.period.label}</div>
+  ${periodBar()}
 
   <div class="card" style="display:flex;gap:24px;align-items:center;flex-wrap:wrap;margin-bottom:14px">
-    <svg width="150" height="150" viewBox="0 0 150 150" role="img" aria-label="${c.appts} of ${CONFIG.guarantee} appointments, ${p.st}">
+    <svg width="150" height="150" viewBox="0 0 150 150" role="img" aria-label="${c.appts} of ${p.target} appointments, ${p.st}">
       <circle cx="75" cy="75" r="${r}" fill="none" stroke="#EAF3DE" stroke-width="9"/>
       <circle cx="75" cy="75" r="${r}" fill="none" stroke="${p.col}" stroke-width="9" stroke-linecap="round" stroke-dasharray="${circ.toFixed(1)}" stroke-dashoffset="${off}" transform="rotate(-90 75 75)"/>
       <text x="75" y="68" text-anchor="middle" class="serif" fill="${p.col}" style="font-size:32px">${c.appts}</text>
-      <text x="75" y="86" text-anchor="middle" fill="var(--ink-2)" style="font-size:11px;font-family:Outfit">of ${CONFIG.guarantee} appts</text>
+      <text x="75" y="86" text-anchor="middle" fill="var(--ink-2)" style="font-size:11px;font-family:Outfit">of ${p.target} appts</text>
       <text x="75" y="103" text-anchor="middle" fill="${p.col}" style="font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;font-family:Outfit">${p.st}</text>
     </svg>
     <div style="flex:1;min-width:260px">
-      <div class="serif" style="font-size:16px;margin-bottom:2px">${CONFIG.guarantee}-appointment guarantee</div>
-      <div class="sub" style="margin-bottom:12px">Day ${DAY} of ${DPM} · ${MN[TODAY.getMonth()]}</div>
+      <div class="serif" style="font-size:16px;margin-bottom:2px">${isLive?CONFIG.guarantee+'-appointment guarantee':'Performance · '+S.period.label}</div>
+      <div class="sub" style="margin-bottom:12px">${isLive?'Day '+DAY+' of '+DPM+' · '+MN[TODAY.getMonth()]:'Target '+p.target+' appts ('+CONFIG.guarantee+'/mo × '+S.period.months+')'}</div>
       <div class="grid2" style="gap:9px">
-        <div class="card sur" style="margin:0;padding:11px 13px"><span class="lbl">Projected month-end</span><div class="serif" style="font-size:18px;color:${p.col}">${p.proj}</div><div class="sub">vs ${CONFIG.guarantee} target</div></div>
+        ${isLive?`
+        <div class="card sur" style="margin:0;padding:11px 13px"><span class="lbl">Projected month-end</span><div class="serif" style="font-size:18px;color:${p.col}">${p.proj}</div><div class="sub">vs ${p.target} target</div></div>
         <div class="card sur" style="margin:0;padding:11px 13px"><span class="lbl">Days remaining</span><div class="serif" style="font-size:18px">${p.rem}</div><div class="sub">${p.needed>0?p.needed+' more needed':'guarantee met ✓'}</div></div>
         <div class="card sur" style="margin:0;padding:11px 13px"><span class="lbl">Daily run rate</span><div class="serif" style="font-size:18px">${dr}/day</div><div class="sub">need ${nd}/day</div></div>
+        `:`
+        <div class="card sur" style="margin:0;padding:11px 13px"><span class="lbl">Appointments</span><div class="serif" style="font-size:18px;color:${p.col}">${c.appts}</div><div class="sub">vs ${p.target} target</div></div>
+        <div class="card sur" style="margin:0;padding:11px 13px"><span class="lbl">Avg / month</span><div class="serif" style="font-size:18px">${(c.appts/S.period.months).toFixed(1)}</div><div class="sub">over ${S.period.months} months</div></div>
+        <div class="card sur" style="margin:0;padding:11px 13px"><span class="lbl">Vs target</span><div class="serif" style="font-size:18px;color:${p.col}">${c.appts>=p.target?'+':''}${c.appts-p.target}</div><div class="sub">${c.appts>=p.target?'above':'below'} guarantee</div></div>
+        `}
         <div class="card sur" style="margin:0;padding:11px 13px"><span class="lbl">Pipeline value</span><div class="serif" style="font-size:18px;color:var(--ok)">${f$(pipe)}</div><div class="sub">open appts × avg job</div></div>
       </div>
     </div>
@@ -633,7 +726,7 @@ function renderClientView(){
   </div>
 
   <div class="grid2">
-    <div class="card"><div class="sec-t" style="font-size:13px">Appointments by week</div><div class="sec-s">${MN[TODAY.getMonth()]} ${TODAY.getFullYear()}</div><div style="position:relative;height:150px"><canvas id="cv-wk" role="img" aria-label="Weekly appointments">Weekly appointments.</canvas></div></div>
+    <div class="card"><div class="sec-t" style="font-size:13px">Appointments by ${S.period.months<=1?'week':'month'}</div><div class="sec-s">${S.period.label}</div><div style="position:relative;height:150px"><canvas id="cv-wk" role="img" aria-label="Appointments over time">Appointments over time.</canvas></div></div>
     <div class="card"><div class="sec-t" style="font-size:13px">Recent appointments</div><div class="sec-s">Latest from GHL</div>
       <div style="display:grid;grid-template-columns:54px 1fr auto auto;gap:10px;padding-bottom:6px;border-bottom:1px solid var(--line)"><span class="th">Date</span><span class="th">Contact</span><span class="th">Type</span><span class="th">Status</span></div>
       ${apptRows}
