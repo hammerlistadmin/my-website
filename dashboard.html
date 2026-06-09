@@ -239,7 +239,9 @@ const CONFIG = {
     apptAt: 'appt_at',
     spend: 'spend'
   },
-  guarantee: 15
+  guarantee: 15,
+  // Projection assumptions for the prospect-facing "potential" view
+  closeRate: 0.50
 };
 
 const sb = window.supabase.createClient(CONFIG.url, CONFIG.anonKey);
@@ -331,20 +333,17 @@ function enterDemo(){
   el('av').textContent='D'; el('menu-email').textContent='Demo mode';
   S.period=makePeriod('this_month');
   S.clients = demoClients();
-  S.clients.forEach(c=>c._base={appts:c.appts,spend:c.spend,closed:c.closed,revenue:c.revenue});
+  S.clients.forEach(c=>c._base={appts:c.appts,spend:c.spend});
   S.activeClientId=null; S.tab='overview';
   renderShell(); routeAdminOrClient();
 }
 function recomputeDemoForPeriod(){
   const mult=S.period.months;
   S.clients.forEach(c=>{
-    const b=c._base||{appts:c.appts,spend:c.spend,closed:c.closed,revenue:c.revenue};
+    const b=c._base||{appts:c.appts,spend:c.spend};
     c.appts=Math.round(b.appts*mult);
     c.spend=Math.round(b.spend*mult);
-    c.closed=Math.round(b.closed*mult);
-    c.revenue=Math.round(b.revenue*mult);
-    c.closeRate=c.appts>0?c.closed/c.appts:0;
-    c.prev={appts:Math.round(c.appts*.82),spend:Math.round(c.spend*.9),closed:Math.max(0,c.closed-1),revenue:Math.round(c.revenue*.85)};
+    c.prev={appts:Math.round(c.appts*.82),spend:Math.round(c.spend*.9)};
     c.weekly = mult<=1 ? demoWeekly(c.appts,c.spend) : demoMonthly(c.appts);
   });
 }
@@ -354,19 +353,18 @@ function demoMonthly(appts){
   return out;
 }
 function demoClients(){
-  // fictional, isolated cities, demo revenue > $60k/mo
-  const mk=(id,name,trade,city,owner,appts,spend,closed,rev,avgJob,cr)=>({
-    id,name,trade,city,owner,
-    appts,spend,closed,revenue:rev,avgJob,closeRate:cr,
-    prev:{appts:Math.round(appts*.82),spend:Math.round(spend*.9),closed:Math.max(1,closed-1),revenue:Math.round(rev*.85)},
+  // fictional businesses, geographically isolated cities, no real client data
+  const mk=(id,name,trade,city,owner,appts,spend,avgJob)=>({
+    id,name,trade,city,owner,appts,spend,avgJob,
+    prev:{appts:Math.round(appts*.82),spend:Math.round(spend*.9)},
     appointments:demoAppts(trade,appts),
     weekly:demoWeekly(appts,spend),
     campaigns:demoCampaigns(trade,spend,appts)
   });
   return [
-    mk('d1','Summit Edge Concrete','Concrete','Kalispell, MT','Dave M.',13,2100,5,64000,12800,.38),
-    mk('d2','Brightway Comfort','HVAC','Bismarck, ND','Janet R.',16,2450,6,68400,11400,.37),
-    mk('d3','GreenScape Pro','Turfing','Bend, OR','Carlos V.',21,2600,8,96000,12000,.38)
+    mk('d1','Summit Edge Concrete','Concrete','Kalispell, MT','Dave M.',13,2100,12800),
+    mk('d2','Brightway Comfort','HVAC','Bismarck, ND','Janet R.',16,2450,11400),
+    mk('d3','GreenScape Pro','Turfing','Bend, OR','Carlos V.',21,2600,12000)
   ];
 }
 function demoAppts(trade,n){
@@ -462,34 +460,33 @@ async function enrichClient(c){
     const {data:pd}=await sb.from(CONFIG.tables.metrics).select('*').eq('client_id',cid).gte('month',pStartD).lte('month',pEndD);
     prevSpend=(pd||[]).reduce((s,m)=>s+(Number(m[CONFIG.cols.spend])||0),0);
   }catch(e){}
-  // closed_jobs: closed_date (date), job_value (numeric)
-  let closed=0,revenue=0,prevClosed=0,prevRev=0;
-  try{
-    const {data}=await sb.from(CONFIG.tables.closedJobs).select('*').eq('client_id',cid);
-    (data||[]).forEach(j=>{
-      const d=new Date(j.closed_date||j.created_at||0);
-      const val=Number(j.job_value||0);
-      if(d>=P.start && d<=P.end){closed++;revenue+=val;}
-      else if(d>=P.prevStart && d<=P.prevEnd){prevClosed++;prevRev+=val;}
-    });
-  }catch(e){}
 
   const apptCount=appts.length;
-  const avgJob=closed>0?Math.round(revenue/closed):(Number(c.avg_job_value)||9000);
+  const prevApptCount=prevAppts.length;
+  const avgJob=avgJobFor(c);
   return {
     id:cid,
     name:c.name||c.business_name||'Client',
     trade:c.trade||c.niche||'Service',
     city:c.city||[c.city,c.state].filter(Boolean).join(', ')||'',
     owner:c.owner_name||c.contact_name||c.owner||'',
-    appts:apptCount, spend, closed, revenue, avgJob,
-    closeRate:apptCount>0?closed/apptCount:0,
-    prev:{appts:prevAppts.length,spend:prevSpend,closed:prevClosed,revenue:prevRev},
+    appts:apptCount, spend, avgJob,
+    prev:{appts:prevApptCount,spend:prevSpend},
     appointments:appts.map(mapAppt).sort((a,b)=>b._d-a._d).slice(0,8),
     weekly:bucketAppts(appts,spend),
     campaigns:[]
   };
 }
+// average job value: client override if present, else trade default
+function avgJobFor(c){
+  const v=Number(c.avg_job_value||c.avg_job||0);
+  if(v>0) return v;
+  const T=TRADE_DEFAULTS[tradeKey(c.trade||c.niche||'Service')]||TRADE_DEFAULTS.Service;
+  return T.avgJ;
+}
+// projection helpers — appointments → potential at 50% close rate
+function projJobs(appts){ return Math.round(appts*CONFIG.closeRate); }
+function projRev(appts,avgJob){ return Math.round(appts*CONFIG.closeRate*avgJob); }
 function mapAppt(a){
   const d=new Date(a[CONFIG.cols.apptAt]||0);
   let st='pe';
@@ -582,9 +579,10 @@ function routeAdminOrClient(){
 function renderPortfolio(){
   const cs=S.clients;
   if(!cs.length){ el('view').innerHTML='<div class="empty"><div class="ico">📭</div><div>No clients yet.</div></div>'; return; }
-  const tot=cs.reduce((a,c)=>({appts:a.appts+c.appts,spend:a.spend+c.spend,revenue:a.revenue+c.revenue,closed:a.closed+c.closed}),{appts:0,spend:0,revenue:0,closed:0});
-  const prev=cs.reduce((a,c)=>({appts:a.appts+c.prev.appts,spend:a.spend+c.prev.spend,revenue:a.revenue+c.prev.revenue}),{appts:0,spend:0,revenue:0});
-  const roas=tot.spend>0?(tot.revenue/tot.spend).toFixed(1):'0';
+  cs.forEach(c=>{ c._pjobs=projJobs(c.appts); c._prev_pjobs=projJobs(c.prev.appts); c._prev=projRev(c.prev.appts,c.avgJob); c._proj=projRev(c.appts,c.avgJob); });
+  const tot=cs.reduce((a,c)=>({appts:a.appts+c.appts,spend:a.spend+c.spend,proj:a.proj+c._proj,pjobs:a.pjobs+c._pjobs}),{appts:0,spend:0,proj:0,pjobs:0});
+  const prev=cs.reduce((a,c)=>({appts:a.appts+c.prev.appts,spend:a.spend+c.prev.spend,proj:a.proj+c._prev}),{appts:0,spend:0,proj:0});
+  const roas=tot.spend>0?(tot.proj/tot.spend).toFixed(1):'0';
 
   let html=`
   <div class="sec-t">Portfolio overview</div>
@@ -593,13 +591,13 @@ function renderPortfolio(){
   <div class="grid4" style="margin-bottom:15px">
     <div class="card"><span class="lbl">Appointments</span><div class="num">${fN(tot.appts)}</div><div class="mc-m">${deltaHtml(tot.appts,prev.appts)}<span class="sub" style="margin:0">vs prev period</span></div></div>
     <div class="card"><span class="lbl">Ad spend</span><div class="num">${f$(tot.spend)}</div><div class="mc-m">${deltaHtml(tot.spend,prev.spend,true)}<span class="sub" style="margin:0">meta ads</span></div></div>
-    <div class="card gn"><span class="lbl">Revenue</span><div class="num">${f$(tot.revenue)}</div><div class="mc-m">${deltaHtml(tot.revenue,prev.revenue)}<span class="sub" style="margin:0">closed jobs</span></div></div>
-    <div class="card"><span class="lbl">Closed jobs</span><div class="num">${fN(tot.closed)}</div><div class="sub">${S.period.label.toLowerCase()}</div></div>
+    <div class="card gn"><span class="lbl">Projected revenue</span><div class="num">${f$(tot.proj)}</div><div class="mc-m"><span class="sub" style="margin:0">at 50% close rate</span></div></div>
+    <div class="card"><span class="lbl">Projected jobs</span><div class="num">${fN(tot.pjobs)}</div><div class="sub">50% of appointments</div></div>
   </div>
-  <div class="card gs" style="margin-bottom:17px;display:flex;align-items:center;gap:24px;flex-wrap:wrap">
-    <div><span class="lbl">Portfolio ROAS</span><div class="num serif" style="font-size:30px">${roas}×</div><div class="sub">${'$'+roas} revenue per $1 ad spend</div></div>
+  <div class="card gs" style="margin-bottom:18px;display:flex;align-items:center;gap:24px;flex-wrap:wrap">
+    <div><span class="lbl">Projected ROAS</span><div class="num serif" style="font-size:30px">${roas}×</div><div class="sub">${'$'+roas} potential revenue per $1 ad spend</div></div>
     <div style="flex:1;display:flex;gap:22px;flex-wrap:wrap">
-      ${cs.map(c=>`<div><div style="font-size:11px;color:var(--ok);margin-bottom:3px">${esc(c.name)}</div><div class="serif" style="font-size:17px;color:#173404">${c.spend>0?(c.revenue/c.spend).toFixed(1):'0'}×</div></div>`).join('')}
+      ${cs.map(c=>`<div><div style="font-size:11px;color:var(--ok);margin-bottom:3px">${esc(c.name)}</div><div class="serif" style="font-size:17px;color:#173404">${c.spend>0?(c._proj/c.spend).toFixed(1):'—'}×</div></div>`).join('')}
     </div>
   </div>
   <div class="sec-t" style="margin-bottom:13px">Client health</div>
@@ -607,7 +605,7 @@ function renderPortfolio(){
   cs.forEach(c=>{
     const p=pace(c.appts);
     const cpa=c.appts>0?Math.round(c.spend/c.appts):0;
-    const roasC=c.spend>0?(c.revenue/c.spend).toFixed(1):'0';
+    const roasC=c.spend>0?(c._proj/c.spend).toFixed(1):'—';
     const frac=Math.min(c.appts/p.target,1);
     const circ=2*Math.PI*17, off=(circ*(1-frac)).toFixed(1);
     html+=`
@@ -624,10 +622,10 @@ function renderPortfolio(){
       <div class="cc-mini">
         <div><div class="cc-mini-l">Spend</div><div class="cc-mini-v">${f$(c.spend)}</div></div>
         <div><div class="cc-mini-l">CPA</div><div class="cc-mini-v">$${cpa}</div></div>
-        <div><div class="cc-mini-l">Revenue</div><div class="cc-mini-v">${f$(c.revenue)}</div></div>
-        <div><div class="cc-mini-l">ROAS</div><div class="cc-mini-v">${roasC}×</div></div>
-        <div><div class="cc-mini-l">Closed</div><div class="cc-mini-v">${c.closed}</div></div>
-        <div><div class="cc-mini-l">Close %</div><div class="cc-mini-v">${fp(c.closeRate*100)}</div></div>
+        <div><div class="cc-mini-l">Proj. rev</div><div class="cc-mini-v">${f$(c._proj)}</div></div>
+        <div><div class="cc-mini-l">Proj. ROAS</div><div class="cc-mini-v">${roasC}×</div></div>
+        <div><div class="cc-mini-l">Proj. jobs</div><div class="cc-mini-v">${c._pjobs}</div></div>
+        <div><div class="cc-mini-l">Job value</div><div class="cc-mini-v">${f$(c.avgJob)}</div></div>
       </div>
       <div class="cc-f"><span>${esc(c.owner||'')}</span><span>${esc(c.city||'')}</span></div>
     </div>`;
@@ -644,23 +642,26 @@ function renderClientView(){
   if(!c){ goPortfolio(); return; }
   const p=pace(c.appts);
   const cpa=c.appts>0?Math.round(c.spend/c.appts):0;
-  const cpj=c.closed>0?Math.round(c.spend/c.closed):0;
-  const roas=c.spend>0?(c.revenue/c.spend).toFixed(1):'0';
-  const pipe=Math.round((c.appts-c.closed)*c.avgJob);
+  const pjobs=projJobs(c.appts);
+  const prevPjobs=projJobs(c.prev.appts);
+  const proj=projRev(c.appts,c.avgJob);
+  const prevProj=projRev(c.prev.appts,c.avgJob);
+  const roas=c.spend>0?(proj/c.spend).toFixed(1):'—';
+  const cppj=pjobs>0?Math.round(c.spend/pjobs):0;
   const dr=DAY>0?(c.appts/DAY).toFixed(1):0;
   const nd=p.rem>0?(p.needed/p.rem).toFixed(1):0;
   const r=62,circ=2*Math.PI*r,off=(circ*(1-Math.min(c.appts/p.target,1))).toFixed(1);
   const isLive = S.period.key==='this_month';
 
   const metrics=[
-    {l:'Appointments',v:fN(c.appts),d:deltaHtml(c.appts,c.prev.appts),s:'this period'},
+    {l:'Appointments',v:fN(c.appts),d:deltaHtml(c.appts,c.prev.appts),s:'booked this period'},
     {l:'Ad spend',v:f$(c.spend),d:deltaHtml(c.spend,c.prev.spend,true),s:'meta ads'},
     {l:'Cost / appt',v:'$'+cpa,d:'',s:'per booking'},
-    {l:'Closed jobs',v:fN(c.closed),d:deltaHtml(c.closed,c.prev.closed),s:'won deals',g:true},
-    {l:'Revenue',v:f$(c.revenue),d:deltaHtml(c.revenue,c.prev.revenue),s:'closed jobs',g:true},
-    {l:'ROAS',v:roas+'×',d:'',s:'per $1 spent',g:true},
-    {l:'Cost / closed job',v:'$'+fN(cpj),d:'',s:'per won deal'},
-    {l:'Close rate',v:fp(c.closeRate*100),d:'',s:'appts → deals'}
+    {l:'Avg job value',v:f$(c.avgJob),d:'',s:c.trade.toLowerCase()},
+    {l:'Projected jobs',v:fN(pjobs),d:deltaHtml(pjobs,prevPjobs),s:'at 50% close',g:true},
+    {l:'Projected revenue',v:f$(proj),d:deltaHtml(proj,prevProj),s:'potential',g:true},
+    {l:'Projected ROAS',v:roas+(roas==='—'?'':'×'),d:'',s:'potential / spend',g:true},
+    {l:'Cost / proj. job',v:'$'+fN(cppj),d:'',s:'spend ÷ proj jobs'}
   ];
 
   const stL={cf:'Confirmed',cl:'Closed',ns:'No show',pe:'Upcoming'};
@@ -716,7 +717,7 @@ function renderClientView(){
         <div class="card sur" style="margin:0;padding:11px 13px"><span class="lbl">Avg / month</span><div class="serif" style="font-size:18px">${(c.appts/S.period.months).toFixed(1)}</div><div class="sub">over ${S.period.months} months</div></div>
         <div class="card sur" style="margin:0;padding:11px 13px"><span class="lbl">Vs target</span><div class="serif" style="font-size:18px;color:${p.col}">${c.appts>=p.target?'+':''}${c.appts-p.target}</div><div class="sub">${c.appts>=p.target?'above':'below'} guarantee</div></div>
         `}
-        <div class="card sur" style="margin:0;padding:11px 13px"><span class="lbl">Pipeline value</span><div class="serif" style="font-size:18px;color:var(--ok)">${f$(pipe)}</div><div class="sub">open appts × avg job</div></div>
+        <div class="card sur" style="margin:0;padding:11px 13px"><span class="lbl">Projected revenue</span><div class="serif" style="font-size:18px;color:var(--ok)">${f$(proj)}</div><div class="sub">${pjobs} jobs × ${f$(c.avgJob)}</div></div>
       </div>
     </div>
   </div>
@@ -768,11 +769,11 @@ let bid=0;
 function defaultBudget(c){
   const T=TRADE_DEFAULTS[tradeKey(c.trade)];
   return {
-    rev:c.revenue||0, cj:c.closed||0, otherRev:0, otherExp:0,
+    rev:projRev(c.appts,c.avgJob)||0, cj:projJobs(c.appts)||0, otherRev:0, otherExp:0,
     matPct:T.mat, labPct:T.lab, subPct:T.sub,
     ohItems:T.oh.map(([n,cat,a])=>({id:bid++,n,c:cat,a})).concat([{id:bid++,n:'Hammer List retainer',c:'Marketing',a:2200}]),
     jobType:'', jMat:Math.round(c.avgJob*T.mat/100)||0, jLab:Math.round(c.avgJob*T.lab/100)||0, tgtM:Math.round((T.bG[0]+T.bG[1])/2),
-    annGoal:Math.max(120000,(c.revenue||0)*12), cfAp:c.appts||8, cfCr:Math.round((c.closeRate||.25)*100),
+    annGoal:Math.max(120000,projRev(c.appts,c.avgJob)*12), cfAp:c.appts||8, cfCr:Math.round(CONFIG.closeRate*100),
     btab:'pl'
   };
 }
@@ -788,7 +789,7 @@ async function renderBudget(){
     const base=defaultBudget(c);
     S.budget = saved ? Object.assign(base,saved,{ohItems:(saved.ohItems||base.ohItems).map(o=>({id:bid++,n:o.n,c:o.c,a:o.a}))}) : base;
     // always refresh live-sourced fields from current dashboard data
-    if(!saved){ S.budget.rev=c.revenue||0; S.budget.cj=c.closed||0; }
+    if(!saved){ S.budget.rev=projRev(c.appts,c.avgJob)||0; S.budget.cj=projJobs(c.appts)||0; }
   }
   drawBudget(c);
 }
