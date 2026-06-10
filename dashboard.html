@@ -192,6 +192,7 @@ input[type=range]{accent-color:var(--green-l);width:100%;height:5px}
 .cal-ev{font-size:9px;line-height:1.25;padding:3px 5px;border-radius:5px;background:var(--ok-bg);border-left:2px solid var(--ok-br);color:#2C4A12;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cal-ev.new{background:#FAEEDA;border-left-color:var(--accent);color:#6b3d12}
 .cal-ev .nm{filter:blur(3.5px);user-select:none;-webkit-user-select:none;pointer-events:none}
+span.nm{filter:blur(3.5px);user-select:none;-webkit-user-select:none;pointer-events:none}
 .cal-more{font-size:9px;color:var(--ink-3);font-weight:600;padding-left:3px}
 .cal-newbadge{position:absolute;top:5px;right:5px;font-size:7px;font-weight:700;letter-spacing:.04em;color:#fff;background:var(--accent);padding:1px 5px;border-radius:100px}
 .la-stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px}
@@ -390,16 +391,29 @@ function demoClients(){
     weekly:demoWeekly(appts,spend),
     campaigns:demoCampaigns(trade,spend,appts)
   });
-  // Geographically isolated fake cities — no overlap with any real client metro.
-  // Job values match per-trade targets. All strong results — this is a sales piece.
+  // Matches the public territory map exactly: 20 cities, city + trade labels,
+  // no business names (nothing searchable, nothing to expose). Per-trade job values.
   return [
-    mk('d1','Summit Edge Concrete','Concrete','Kalispell, MT','Dave M.',16,2400,12000),
-    mk('d2','Brightway Comfort','HVAC','Bismarck, ND','Janet R.',18,2650,9000),
-    mk('d3','GreenScape Pro','Turfing','Bend, OR','Carlos V.',21,2500,11000),
-    mk('d4','Timberline Decks','Decking','Coeur d\'Alene, ID','Ryan P.',14,2300,17000),
-    mk('d5','Premier Remodel Co','Remodeling','Sioux Falls, SD','Alicia T.',17,2800,14000),
-    mk('d6','Apex Roofing','Roofing','Cheyenne, WY','Mark D.',19,3100,13500),
-    mk('d7','Stonepath Concrete','Concrete','Rapid City, SD','Luis R.',15,2550,12000)
+    mk('d1','Denver, CO','Concrete','',' ',16,2400,12000),
+    mk('d2','Las Vegas, NV','Turfing','',' ',21,2500,11000),
+    mk('d3','Salt Lake City, UT','Concrete','',' ',15,2550,12000),
+    mk('d4','Missoula, MT','Decking','',' ',14,2300,17000),
+    mk('d5','Jacksonville, FL','Concrete','',' ',18,2700,12000),
+    mk('d6','Shreveport, LA','HVAC','',' ',17,2600,9000),
+    mk('d7','Fargo, ND','Roofing','',' ',16,2900,13500),
+    mk('d8','Lubbock, TX','Remodeling','',' ',15,2800,14000),
+    mk('d9','Charleston, WV','Decking','',' ',13,2250,17000),
+    mk('d10','Billings, MT','Concrete','',' ',19,2450,12000),
+    mk('d11','Topeka, KS','Roofing','',' ',17,3000,13500),
+    mk('d12','Rapid City, SD','Decking','',' ',14,2350,17000),
+    mk('d13','Roanoke, VA','HVAC','',' ',18,2650,9000),
+    mk('d14','Baton Rouge, LA','Concrete','',' ',16,2500,12000),
+    mk('d15','Spokane, WA','Roofing','',' ',19,3100,13500),
+    mk('d16','Wichita, KS','Turfing','',' ',20,2550,11000),
+    mk('d17','Erie, PA','Concrete','',' ',15,2400,12000),
+    mk('d18','Tucson, AZ','Turfing','',' ',22,2600,11000),
+    mk('d19','Little Rock, AR','Remodeling','',' ',16,2850,14000),
+    mk('d20','Sioux Falls, SD','HVAC','',' ',18,2650,9000)
   ];
 }
 function demoAppts(trade,n){
@@ -800,7 +814,7 @@ function renderClientView(){
   const apptRows=c.appointments.length?c.appointments.map(a=>`
     <div style="display:grid;grid-template-columns:54px 1fr auto auto;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)">
       <span style="font-size:11px;color:var(--ink-2)">${esc(a.date)}</span>
-      <span style="font-size:12px;font-weight:500">${esc(a.name)}</span>
+      <span style="font-size:12px;font-weight:500"${S.demo?' class="nm"':''}>${esc(a.name)}</span>
       <span style="font-size:11px;color:var(--ink-2)">${esc(a.type)}</span>
       <span class="as as-${a.status}">${stL[a.status]||''}</span>
     </div>`).join(''):'<div class="muted" style="padding:14px 0;font-size:12px">No appointments yet this month.</div>';
