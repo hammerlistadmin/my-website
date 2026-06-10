@@ -169,6 +169,35 @@ input[type=range]{accent-color:var(--green-l);width:100%;height:5px}
 @keyframes sp{to{transform:rotate(360deg)}}
 .save-toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--green);color:#fff;padding:10px 20px;border-radius:100px;font-size:13px;opacity:0;transition:transform .3s,opacity .3s;z-index:200}
 .save-toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+
+/* ---------- Live activity calendar ---------- */
+.la-hd{background:linear-gradient(135deg,var(--green),var(--green-l));border-radius:var(--r);padding:20px 22px;margin-bottom:16px;color:#fff}
+.la-hd .t{font-size:20px;margin-bottom:5px}
+.la-hd .s{font-size:13px;color:#B7D5C4;max-width:560px;line-height:1.5}
+.la-live{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#D8EDE0;background:rgba(255,255,255,.12);padding:4px 11px;border-radius:100px;margin-bottom:12px}
+.la-live .dot{width:7px;height:7px;border-radius:50%;background:#52B788;box-shadow:0 0 0 0 rgba(82,183,136,.7);animation:pulse 1.8s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(82,183,136,.6)}70%{box-shadow:0 0 0 7px rgba(82,183,136,0)}100%{box-shadow:0 0 0 0 rgba(82,183,136,0)}}
+.cal-toolbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:13px}
+.cal-pills{display:flex;gap:6px;flex-wrap:wrap}
+.cal-pill{padding:6px 13px;border-radius:100px;border:1px solid var(--line-2);background:var(--surface);color:var(--ink-2);font-size:12px;font-weight:500;cursor:pointer}
+.cal-pill.act{background:var(--green);border-color:var(--green);color:#fff}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.cal-dow{font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);text-align:center;padding:4px 0}
+.cal-cell{background:var(--surface);border:1px solid var(--line);border-radius:9px;min-height:92px;padding:6px 6px 7px;display:flex;flex-direction:column;gap:3px;position:relative;overflow:hidden}
+.cal-cell.empty{background:transparent;border:none}
+.cal-cell.today{border-color:var(--green-l);box-shadow:0 0 0 2px rgba(45,106,79,.18)}
+.cal-cell.future{opacity:.55}
+.cal-dn{font-size:10px;font-weight:600;color:var(--ink-2);margin-bottom:1px}
+.cal-cell.today .cal-dn{color:var(--green-l)}
+.cal-ev{font-size:9px;line-height:1.25;padding:3px 5px;border-radius:5px;background:var(--ok-bg);border-left:2px solid var(--ok-br);color:#2C4A12;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cal-ev.new{background:#FAEEDA;border-left-color:var(--accent);color:#6b3d12}
+.cal-ev .nm{filter:blur(3.5px);user-select:none;-webkit-user-select:none;pointer-events:none}
+.cal-more{font-size:9px;color:var(--ink-3);font-weight:600;padding-left:3px}
+.cal-newbadge{position:absolute;top:5px;right:5px;font-size:7px;font-weight:700;letter-spacing:.04em;color:#fff;background:var(--accent);padding:1px 5px;border-radius:100px}
+.la-stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px}
+.la-stat .n{font-size:22px;font-weight:500;color:var(--ink)}
+.la-stat.gn{background:var(--green);border-color:transparent}.la-stat.gn .n{color:#fff}
+.la-note{font-size:11px;color:var(--ink-3);margin-top:13px;text-align:center}
 </style>
 </head>
 <body>
@@ -361,10 +390,16 @@ function demoClients(){
     weekly:demoWeekly(appts,spend),
     campaigns:demoCampaigns(trade,spend,appts)
   });
+  // Geographically isolated fake cities — no overlap with any real client metro.
+  // Job values match per-trade targets. All strong results — this is a sales piece.
   return [
-    mk('d1','Summit Edge Concrete','Concrete','Kalispell, MT','Dave M.',13,2100,12800),
-    mk('d2','Brightway Comfort','HVAC','Bismarck, ND','Janet R.',16,2450,11400),
-    mk('d3','GreenScape Pro','Turfing','Bend, OR','Carlos V.',21,2600,12000)
+    mk('d1','Summit Edge Concrete','Concrete','Kalispell, MT','Dave M.',16,2400,12000),
+    mk('d2','Brightway Comfort','HVAC','Bismarck, ND','Janet R.',18,2650,9000),
+    mk('d3','GreenScape Pro','Turfing','Bend, OR','Carlos V.',21,2500,11000),
+    mk('d4','Timberline Decks','Decking','Coeur d\'Alene, ID','Ryan P.',14,2300,17000),
+    mk('d5','Premier Remodel Co','Remodeling','Sioux Falls, SD','Alicia T.',17,2800,14000),
+    mk('d6','Apex Roofing','Roofing','Cheyenne, WY','Mark D.',19,3100,13500),
+    mk('d7','Stonepath Concrete','Concrete','Rapid City, SD','Luis R.',15,2550,12000)
   ];
 }
 function demoAppts(trade,n){
@@ -539,6 +574,7 @@ function renderShell(){
     tabs.push(['overview','Overview'],['budget','Budget']);
   } else if(S.isAdmin){
     tabs.push(['overview','Portfolio']);
+    if(S.demo) tabs.push(['activity','Live activity']);
   } else {
     tabs.push(['overview','Overview'],['budget','Budget']);
   }
@@ -554,7 +590,7 @@ function setBC(){
     const root = S.isAdmin?`<span class="lnk" onclick="goPortfolio()">Portfolio</span><span class="sep">›</span>`:'';
     el('bc').innerHTML=`${root}<span class="cur">${esc(c?c.name:'')}</span>`;
   } else {
-    el('bc').innerHTML=`<span class="cur">${S.isAdmin?'Portfolio':'Overview'}</span>`;
+    el('bc').innerHTML=`<span class="cur">${S.tab==='activity'&&S.demo?'Live activity':(S.isAdmin?'Portfolio':'Overview')}</span>`;
   }
 }
 function goPortfolio(){ S.activeClientId=null; S.tab='overview'; renderShell(); routeAdminOrClient(); }
@@ -566,12 +602,108 @@ function routeAdminOrClient(){
     if(S.tab==='budget') renderBudget();
     else renderClientView();
   } else if(S.isAdmin){
-    renderPortfolio();
+    if(S.tab==='activity' && S.demo) renderLiveActivity();
+    else renderPortfolio();
   } else {
     // non-admin, no/empty client
     el('view').innerHTML='<div class="empty"><div class="ico">📭</div><div>No dashboard data yet.<br><span class="muted" style="font-size:12px">Your campaigns are being set up.</span></div></div>';
   }
 }
+
+/* ════════════════════════════════════════════════════════════
+   LIVE ACTIVITY CALENDAR (demo only — fully simulated, no real data)
+   Deterministic per-day via seeded PRNG so it's consistent for every
+   viewer on a given date and grows as the month progresses.
+   ════════════════════════════════════════════════════════════ */
+const LA_TRADES=[
+  {key:'Concrete', label:'Concrete partner', density:1.15, jobs:['Driveway estimate','Stamped patio','Retaining wall','Flatwork quote','Garage slab','Walkway & steps','Pool deck']},
+  {key:'HVAC', label:'HVAC partner', density:1.25, jobs:['AC replacement','Furnace install','Mini-split quote','System tune-up','Ductwork eval','New install estimate']},
+  {key:'Remodeling', label:'Remodeling partner', density:1.0, jobs:['Kitchen consult','Bath remodel','Whole-home estimate','Basement finish','Balcony rebuild','Flooring quote']},
+  {key:'Roofing', label:'Roofing partner', density:1.1, jobs:['Roof inspection','Full replacement','Storm-damage eval','Repair estimate','Gutter & roof quote']}
+];
+const LA_FIRST=['James','Linda','Tom','Sarah','Derek','Patricia','Carl','Donna','Frank','Beverly','Steven','Nancy','Brian','Karen','Mike','Susan','Greg','Angela','Paul','Diane','Kevin','Laura','Scott','Rachel','Tony','Maria','Doug','Cheryl','Wayne','Holly','Victor','Tina','Ralph','Joan','Bruce','Gail'];
+let LA_state={trade:0};
+
+// tiny deterministic PRNG (mulberry32) so the board is stable per seed
+function laRng(seed){ return function(){ seed|=0; seed=seed+0x6D2B79F5|0; let t=Math.imul(seed^seed>>>15,1|seed); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+
+function renderLiveActivity(){
+  const td=LA_TRADES[LA_state.trade];
+  const y=TODAY.getFullYear(), m=TODAY.getMonth();
+  const first=new Date(y,m,1), startDow=first.getDay();
+  const daysInMonth=new Date(y,m+1,0).getDate();
+
+  // build per-day booking lists, seeded by month+day+trade
+  const dayEvents={};
+  let monthTotal=0, todayNew=0;
+  for(let d=1; d<=daysInMonth; d++){
+    const dow=new Date(y,m,d).getDay();
+    if(dow===0){ dayEvents[d]=[]; continue; } // no Sunday bookings
+    const rng=laRng((y*10000)+(m*100)+d + LA_state.trade*7919);
+    // weekday booking density; Saturdays lighter
+    let base = dow===6 ? 0.6 : 1.0;
+    let n = Math.round((1 + rng()*2.4) * td.density * base); // ~1-4 per active day
+    if(d>TODAY.getDate()) n=Math.max(0,Math.round(n*0.45)); // future days lighter (still filling)
+    const evs=[];
+    for(let i=0;i<n;i++){
+      const fn=LA_FIRST[Math.floor(rng()*LA_FIRST.length)];
+      const li=String.fromCharCode(65+Math.floor(rng()*26));
+      const job=td.jobs[Math.floor(rng()*td.jobs.length)];
+      const isNew = d===TODAY.getDate(); // "landed today"
+      evs.push({nm:fn+' '+li+'.', job, isNew});
+      if(d<=TODAY.getDate()) monthTotal++;
+      if(isNew) todayNew++;
+    }
+    dayEvents[d]=evs;
+  }
+
+  // calendar cells
+  let cells='';
+  for(let i=0;i<startDow;i++) cells+=`<div class="cal-cell empty"></div>`;
+  for(let d=1; d<=daysInMonth; d++){
+    const isToday=d===TODAY.getDate();
+    const isFuture=d>TODAY.getDate();
+    const evs=dayEvents[d]||[];
+    const shown=evs.slice(0,3);
+    const extra=evs.length-shown.length;
+    const evHtml=shown.map(e=>`<div class="cal-ev ${e.isNew?'new':''}"><span class="nm">${esc(e.nm)}</span> · ${esc(e.job)}</div>`).join('');
+    const moreHtml=extra>0?`<div class="cal-more">+${extra} more</div>`:'';
+    const newBadge=isToday&&todayNew>0?`<div class="cal-newbadge">+${todayNew} today</div>`:'';
+    cells+=`<div class="cal-cell ${isToday?'today':''} ${isFuture?'future':''}">${newBadge}<div class="cal-dn">${d}</div>${evHtml}${moreHtml}</div>`;
+  }
+
+  const dows=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d=>`<div class="cal-dow">${d}</div>`).join('');
+  const avgPerDay=(monthTotal/Math.max(1,TODAY.getDate())).toFixed(1);
+
+  el('view').innerHTML=`
+  <div class="la-hd">
+    <div class="la-live"><span class="dot"></span> Live · updates daily</div>
+    <div class="t serif">A glimpse of how our partners are performing</div>
+    <div class="s">This is a real-time look at booking activity across a Hammer List partner account. Names are hidden for privacy — but the volume is real. New appointments land every day.</div>
+  </div>
+
+  <div class="cal-toolbar">
+    <div class="cal-pills">
+      ${LA_TRADES.map((t,i)=>`<button class="cal-pill ${LA_state.trade===i?'act':''}" onclick="laSwitch(${i})">${esc(t.label)}</button>`).join('')}
+    </div>
+    <div style="font-size:12px;color:var(--ink-2)">${MN[m]} ${y}</div>
+  </div>
+
+  <div class="grid4" style="margin-bottom:15px">
+    <div class="la-stat gn"><span class="lbl">Booked this month</span><div class="n">${monthTotal}</div><div class="sub">and counting</div></div>
+    <div class="la-stat"><span class="lbl">New today</span><div class="n">+${todayNew}</div><div class="sub">landed in the last 24h</div></div>
+    <div class="la-stat"><span class="lbl">Avg / day</span><div class="n">${avgPerDay}</div><div class="sub">appointments booked</div></div>
+    <div class="la-stat"><span class="lbl">Day of month</span><div class="n">${TODAY.getDate()}/${daysInMonth}</div><div class="sub">${MN[m]}</div></div>
+  </div>
+
+  <div class="card">
+    <div class="cal-grid" style="margin-bottom:6px">${dows}</div>
+    <div class="cal-grid">${cells}</div>
+  </div>
+
+  <div class="la-note">Partner identity and homeowner details are hidden. Booking volume reflects a live partner account.</div>`;
+}
+function laSwitch(i){ LA_state.trade=i; renderLiveActivity(); }
 
 /* ════════════════════════════════════════════════════════════
    PORTFOLIO (admin)
@@ -610,7 +742,7 @@ function renderPortfolio(){
     const circ=2*Math.PI*17, off=(circ*(1-frac)).toFixed(1);
     html+=`
     <div class="cc ${p.pc==='at'?'at':p.pc==='bh'?'bh':''}" onclick="goClient('${c.id}')">
-      <div class="cc-hd"><div><div class="cc-n">${esc(c.name)}</div><div class="cc-m"><span class="trade">${esc(c.trade)}</span></div></div><span class="chip chip-${p.pc}">${p.st}</span></div>
+      <div class="cc-hd"><div><div class="cc-n">${esc(c.name)}</div><div class="cc-m"><span class="trade">${esc(c.trade)}</span>${S.demo&&c.city?'· '+esc(c.city):''}</div></div><span class="chip chip-${p.pc}">${p.st}</span></div>
       <div class="cc-ring">
         <svg width="46" height="46" viewBox="0 0 46 46" aria-hidden="true">
           <circle cx="23" cy="23" r="17" fill="none" stroke="${p.pc==='on'?'#EAF3DE':p.pc==='at'?'#FAEEDA':'#FCEBEB'}" stroke-width="5"/>
@@ -627,7 +759,7 @@ function renderPortfolio(){
         <div><div class="cc-mini-l">Proj. jobs</div><div class="cc-mini-v">${c._pjobs}</div></div>
         <div><div class="cc-mini-l">Job value</div><div class="cc-mini-v">${f$(c.avgJob)}</div></div>
       </div>
-      <div class="cc-f"><span>${esc(c.owner||'')}</span><span></span></div>
+      <div class="cc-f"><span>${esc(c.owner||'')}</span><span>${S.demo?esc(c.city||''):''}</span></div>
     </div>`;
   });
   html+=`</div>`;
@@ -693,7 +825,7 @@ function renderClientView(){
     <span class="trade">${esc(c.trade)}</span>
     <span class="chip chip-${p.pc}">${p.st}</span>
   </div>
-  <div class="sec-s">${[esc(c.owner)].filter(Boolean).join(' · ')}${c.owner?' · ':''}${S.period.label}</div>
+  <div class="sec-s">${[S.demo?esc(c.city):'',esc(c.owner)].filter(Boolean).join(' · ')}${(S.demo&&c.city)||c.owner?' · ':''}${S.period.label}</div>
   ${periodBar()}
 
   <div class="card" style="display:flex;gap:24px;align-items:center;flex-wrap:wrap;margin-bottom:14px">
