@@ -405,7 +405,7 @@ function demoClients(){
 function demoAppts(trade,n){
   const types={Concrete:['Driveway','Stamped patio','Retaining wall','Flatwork'],HVAC:['AC replacement','Furnace install','Mini split','Service call'],Turfing:['Turf install','Pavers','Putting green','Artificial grass']}[trade]||['Service'];
   const first=['James','Linda','Tom','Sarah','Derek','Patricia','Carl','Donna','Frank','Beverly','Steven','Nancy','Brian','Karen','Mike'];
-  const sts=['cf','cf','cl','cf','ns','cf','cl','pe'];
+  const sts=['cf','cf','cl','cf','cf','cl','cf','pe'];
   const out=[];
   for(let i=0;i<Math.min(n,8);i++){
     const d=new Date(TODAY); d.setDate(DAY-i);
@@ -816,7 +816,7 @@ function renderClientView(){
 
   const noShows=c.appointments.filter(a=>a.status==='ns').length;
   const nsRate=c.appointments.length?noShows/c.appointments.length:0;
-  const nsAlert=nsRate>0.10?`<div class="alert alert-warn" style="margin-top:13px"><span>⚠</span><div><strong>No-show rate is ${fp(nsRate*100)}</strong> — above the 8–10% norm. A double-confirmation sequence in GHL would recover most of these.</div></div>`:'';
+  const nsAlert=(!S.demo && nsRate>0.10)?`<div class="alert alert-warn" style="margin-top:13px"><span>⚠</span><div><strong>No-show rate is ${fp(nsRate*100)}</strong> — above the 8–10% norm. A double-confirmation sequence in GHL would recover most of these.</div></div>`:'';
 
   let html=`
   ${S.isAdmin?'<button class="back" onclick="goPortfolio()">← Portfolio</button>':''}
