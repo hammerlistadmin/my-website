@@ -391,29 +391,30 @@ function demoClients(){
     weekly:demoWeekly(appts,spend),
     campaigns:demoCampaigns(trade,spend,appts)
   });
-  // Matches the public territory map exactly: 20 cities, city + trade labels,
-  // no business names (nothing searchable, nothing to expose). Per-trade job values.
+  // Matches the public territory map: 20 cities, city + trade, no business names.
+  // CPA set realistically ($7-22, HVAC <=$15); spend = appts x CPA so every number reconciles.
+  // mk's spend arg below is written as appts*CPA for transparency.
   return [
-    mk('d1','Denver, CO','Concrete','',' ',16,2400,12000),
-    mk('d2','Las Vegas, NV','Turfing','',' ',21,2500,11000),
-    mk('d3','Salt Lake City, UT','Concrete','',' ',15,2550,12000),
-    mk('d4','Missoula, MT','Decking','',' ',14,2300,17000),
-    mk('d5','Jacksonville, FL','Concrete','',' ',18,2700,12000),
-    mk('d6','Shreveport, LA','HVAC','',' ',17,2600,9000),
-    mk('d7','Fargo, ND','Roofing','',' ',16,2900,13500),
-    mk('d8','Lubbock, TX','Remodeling','',' ',15,2800,14000),
-    mk('d9','Charleston, WV','Decking','',' ',13,2250,17000),
-    mk('d10','Billings, MT','Concrete','',' ',19,2450,12000),
-    mk('d11','Topeka, KS','Roofing','',' ',17,3000,13500),
-    mk('d12','Rapid City, SD','Decking','',' ',14,2350,17000),
-    mk('d13','Roanoke, VA','HVAC','',' ',18,2650,9000),
-    mk('d14','Baton Rouge, LA','Concrete','',' ',16,2500,12000),
-    mk('d15','Spokane, WA','Roofing','',' ',19,3100,13500),
-    mk('d16','Wichita, KS','Turfing','',' ',20,2550,11000),
-    mk('d17','Erie, PA','Concrete','',' ',15,2400,12000),
-    mk('d18','Tucson, AZ','Turfing','',' ',22,2600,11000),
-    mk('d19','Little Rock, AR','Remodeling','',' ',16,2850,14000),
-    mk('d20','Sioux Falls, SD','HVAC','',' ',18,2650,9000)
+    mk('d1','Denver, CO','Concrete','',' ',16,16*18,12000),
+    mk('d2','Las Vegas, NV','Turfing','',' ',21,21*9,11000),
+    mk('d3','Salt Lake City, UT','Concrete','',' ',15,15*20,12000),
+    mk('d4','Missoula, MT','Decking','',' ',14,14*21,17000),
+    mk('d5','Jacksonville, FL','Concrete','',' ',18,18*16,12000),
+    mk('d6','Shreveport, LA','HVAC','',' ',17,17*13,9000),
+    mk('d7','Fargo, ND','Roofing','',' ',16,16*19,13500),
+    mk('d8','Lubbock, TX','Remodeling','',' ',15,15*20,14000),
+    mk('d9','Charleston, WV','Decking','',' ',13,13*22,17000),
+    mk('d10','Billings, MT','Concrete','',' ',19,19*15,12000),
+    mk('d11','Topeka, KS','Roofing','',' ',17,17*18,13500),
+    mk('d12','Rapid City, SD','Decking','',' ',14,14*20,17000),
+    mk('d13','Roanoke, VA','HVAC','',' ',18,18*12,9000),
+    mk('d14','Baton Rouge, LA','Concrete','',' ',16,16*17,12000),
+    mk('d15','Spokane, WA','Roofing','',' ',19,19*16,13500),
+    mk('d16','Wichita, KS','Turfing','',' ',20,20*10,11000),
+    mk('d17','Erie, PA','Concrete','',' ',15,15*19,12000),
+    mk('d18','Tucson, AZ','Turfing','',' ',22,22*8,11000),
+    mk('d19','Little Rock, AR','Remodeling','',' ',16,16*21,14000),
+    mk('d20','Sioux Falls, SD','HVAC','',' ',18,18*14,9000)
   ];
 }
 function demoAppts(trade,n){
@@ -737,15 +738,15 @@ function renderPortfolio(){
   <div class="grid4" style="margin-bottom:15px">
     <div class="card"><span class="lbl">Appointments</span><div class="num">${fN(tot.appts)}</div><div class="mc-m">${deltaHtml(tot.appts,prev.appts)}<span class="sub" style="margin:0">vs prev period</span></div></div>
     <div class="card"><span class="lbl">Ad spend</span><div class="num">${f$(tot.spend)}</div><div class="mc-m">${deltaHtml(tot.spend,prev.spend,true)}<span class="sub" style="margin:0">meta ads</span></div></div>
-    <div class="card gn"><span class="lbl">Projected revenue</span><div class="num">${f$(tot.proj)}</div><div class="mc-m"><span class="sub" style="margin:0">at 50% close rate</span></div></div>
+    ${S.demo?`<div class="card gn"><span class="lbl">Avg cost / appt</span><div class="num">${tot.appts>0?'$'+Math.round(tot.spend/tot.appts):'—'}</div><div class="mc-m"><span class="sub" style="margin:0">across all partners</span></div></div>`:`<div class="card gn"><span class="lbl">Projected revenue</span><div class="num">${f$(tot.proj)}</div><div class="mc-m"><span class="sub" style="margin:0">at 50% close rate</span></div></div>`}
     <div class="card"><span class="lbl">Projected jobs</span><div class="num">${fN(tot.pjobs)}</div><div class="sub">50% of appointments</div></div>
   </div>
-  <div class="card gs" style="margin-bottom:18px;display:flex;align-items:center;gap:24px;flex-wrap:wrap">
+  ${S.demo?'':`<div class="card gs" style="margin-bottom:18px;display:flex;align-items:center;gap:24px;flex-wrap:wrap">
     <div><span class="lbl">Projected ROAS</span><div class="num serif" style="font-size:30px">${roas}×</div><div class="sub">${'$'+roas} potential revenue per $1 ad spend</div></div>
     <div style="flex:1;display:flex;gap:22px;flex-wrap:wrap">
       ${cs.map(c=>`<div><div style="font-size:11px;color:var(--ok);margin-bottom:3px">${esc(c.name)}</div><div class="serif" style="font-size:17px;color:#173404">${c.spend>0?(c._proj/c.spend).toFixed(1):'—'}×</div></div>`).join('')}
     </div>
-  </div>
+  </div>`}
   <div class="sec-t" style="margin-bottom:13px">Client health</div>
   <div class="grid3">`;
   cs.forEach(c=>{
@@ -768,8 +769,8 @@ function renderPortfolio(){
       <div class="cc-mini">
         <div><div class="cc-mini-l">Spend</div><div class="cc-mini-v">${f$(c.spend)}</div></div>
         <div><div class="cc-mini-l">CPA</div><div class="cc-mini-v">$${cpa}</div></div>
-        <div><div class="cc-mini-l">Proj. rev</div><div class="cc-mini-v">${f$(c._proj)}</div></div>
-        <div><div class="cc-mini-l">Proj. ROAS</div><div class="cc-mini-v">${roasC}×</div></div>
+        ${S.demo?'':`<div><div class="cc-mini-l">Proj. rev</div><div class="cc-mini-v">${f$(c._proj)}</div></div>
+        <div><div class="cc-mini-l">Proj. ROAS</div><div class="cc-mini-v">${roasC}×</div></div>`}
         <div><div class="cc-mini-l">Proj. jobs</div><div class="cc-mini-v">${c._pjobs}</div></div>
         <div><div class="cc-mini-l">Job value</div><div class="cc-mini-v">${f$(c.avgJob)}</div></div>
       </div>
@@ -805,8 +806,10 @@ function renderClientView(){
     {l:'Cost / appt',v:'$'+cpa,d:'',s:'per booking'},
     {l:'Avg job value',v:f$(c.avgJob),d:'',s:c.trade.toLowerCase()},
     {l:'Projected jobs',v:fN(pjobs),d:deltaHtml(pjobs,prevPjobs),s:'at 50% close',g:true},
-    {l:'Projected revenue',v:f$(proj),d:deltaHtml(proj,prevProj),s:'potential',g:true},
-    {l:'Projected ROAS',v:roas+(roas==='—'?'':'×'),d:'',s:'potential / spend',g:true},
+    ...(S.demo?[]:[
+      {l:'Projected revenue',v:f$(proj),d:deltaHtml(proj,prevProj),s:'potential',g:true},
+      {l:'Projected ROAS',v:roas+(roas==='—'?'':'×'),d:'',s:'potential / spend',g:true}
+    ]),
     {l:'Cost / proj. job',v:'$'+fN(cppj),d:'',s:'spend ÷ proj jobs'}
   ];
 
@@ -863,7 +866,7 @@ function renderClientView(){
         <div class="card sur" style="margin:0;padding:11px 13px"><span class="lbl">Avg / month</span><div class="serif" style="font-size:18px">${(c.appts/S.period.months).toFixed(1)}</div><div class="sub">over ${S.period.months} months</div></div>
         <div class="card sur" style="margin:0;padding:11px 13px"><span class="lbl">Vs target</span><div class="serif" style="font-size:18px;color:${p.col}">${c.appts>=p.target?'+':''}${c.appts-p.target}</div><div class="sub">${c.appts>=p.target?'above':'below'} guarantee</div></div>
         `}
-        <div class="card sur" style="margin:0;padding:11px 13px"><span class="lbl">Projected revenue</span><div class="serif" style="font-size:18px;color:var(--ok)">${f$(proj)}</div><div class="sub">${pjobs} jobs × ${f$(c.avgJob)}</div></div>
+        ${S.demo?`<div class="card sur" style="margin:0;padding:11px 13px"><span class="lbl">Cost / appt</span><div class="serif" style="font-size:18px;color:var(--ok)">$${cpa}</div><div class="sub">${fN(c.appts)} booked · ${f$(c.spend)} spend</div></div>`:`<div class="card sur" style="margin:0;padding:11px 13px"><span class="lbl">Projected revenue</span><div class="serif" style="font-size:18px;color:var(--ok)">${f$(proj)}</div><div class="sub">${pjobs} jobs × ${f$(c.avgJob)}</div></div>`}
       </div>
     </div>
   </div>
