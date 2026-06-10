@@ -610,7 +610,7 @@ function renderPortfolio(){
     const circ=2*Math.PI*17, off=(circ*(1-frac)).toFixed(1);
     html+=`
     <div class="cc ${p.pc==='at'?'at':p.pc==='bh'?'bh':''}" onclick="goClient('${c.id}')">
-      <div class="cc-hd"><div><div class="cc-n">${esc(c.name)}</div><div class="cc-m"><span class="trade">${esc(c.trade)}</span>${c.city?'· '+esc(c.city):''}</div></div><span class="chip chip-${p.pc}">${p.st}</span></div>
+      <div class="cc-hd"><div><div class="cc-n">${esc(c.name)}</div><div class="cc-m"><span class="trade">${esc(c.trade)}</span></div></div><span class="chip chip-${p.pc}">${p.st}</span></div>
       <div class="cc-ring">
         <svg width="46" height="46" viewBox="0 0 46 46" aria-hidden="true">
           <circle cx="23" cy="23" r="17" fill="none" stroke="${p.pc==='on'?'#EAF3DE':p.pc==='at'?'#FAEEDA':'#FCEBEB'}" stroke-width="5"/>
@@ -627,7 +627,7 @@ function renderPortfolio(){
         <div><div class="cc-mini-l">Proj. jobs</div><div class="cc-mini-v">${c._pjobs}</div></div>
         <div><div class="cc-mini-l">Job value</div><div class="cc-mini-v">${f$(c.avgJob)}</div></div>
       </div>
-      <div class="cc-f"><span>${esc(c.owner||'')}</span><span>${esc(c.city||'')}</span></div>
+      <div class="cc-f"><span>${esc(c.owner||'')}</span><span></span></div>
     </div>`;
   });
   html+=`</div>`;
@@ -693,7 +693,7 @@ function renderClientView(){
     <span class="trade">${esc(c.trade)}</span>
     <span class="chip chip-${p.pc}">${p.st}</span>
   </div>
-  <div class="sec-s">${[esc(c.city),esc(c.owner)].filter(Boolean).join(' · ')} · ${S.period.label}</div>
+  <div class="sec-s">${[esc(c.owner)].filter(Boolean).join(' · ')}${c.owner?' · ':''}${S.period.label}</div>
   ${periodBar()}
 
   <div class="card" style="display:flex;gap:24px;align-items:center;flex-wrap:wrap;margin-bottom:14px">
@@ -762,6 +762,7 @@ const TRADE_DEFAULTS={
   Decking:{bG:[30,45],bN:[12,20],avgJ:16000,mat:32,lab:28,sub:0,seas:[.4,.5,.8,1.1,1.3,1.3,1.2,1.2,1,.8,.5,.4],oh:[['Trucks & trailers','Equipment',1400],['Power tools','Equipment',500],['Liability insurance','Insurance',650],['Workers comp','Insurance',400],['Lumber yard','Operations',200]]},
   'Kitchen & Bath':{bG:[35,55],bN:[15,25],avgJ:28000,mat:25,lab:30,sub:5,seas:[.8,.8,1,1.1,1.1,1,1,1.1,1.1,1,.9,.8],oh:[['Showroom rent','Facility',2500],['Design software','Software',300],['Vehicles','Equipment',1200],['Liability insurance','Insurance',700],['Workers comp','Insurance',450],['Showroom samples','Operations',400]]},
   Electrical:{bG:[25,45],bN:[10,18],avgJ:5500,mat:20,lab:35,sub:0,seas:[.9,.9,1,1,1.1,1.1,1.1,1.1,1,1,.9,.9],oh:[['Service vehicles','Equipment',1600],['Test equipment','Equipment',500],['Liability insurance','Insurance',700],['Workers comp','Insurance',500],['Licenses & permits','Compliance',200]]},
+  Remodeling:{bG:[30,50],bN:[12,22],avgJ:14000,mat:30,lab:30,sub:5,seas:[.8,.8,.9,1,1.1,1.1,1.1,1.1,1.1,1,.9,.8],oh:[['Trucks & trailers','Equipment',1500],['Tools & equipment','Equipment',500],['Liability insurance','Insurance',700],['Workers comp','Insurance',450],['Office & admin','Admin',700]]},
   Service:{bG:[25,45],bN:[10,20],avgJ:8000,mat:25,lab:30,sub:0,seas:[1,1,1,1,1,1,1,1,1,1,1,1],oh:[['Vehicles','Equipment',1500],['Insurance','Insurance',600],['Workers comp','Insurance',400],['Software','Software',250],['Admin','Admin',600]]}
 };
 function tradeKey(trade){ return TRADE_DEFAULTS[trade]?trade:'Service'; }
