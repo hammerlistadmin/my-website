@@ -418,13 +418,30 @@ function demoClients(){
   ];
 }
 function demoAppts(trade,n){
-  const types={Concrete:['Driveway','Stamped patio','Retaining wall','Flatwork'],HVAC:['AC replacement','Furnace install','Mini split','Service call'],Turfing:['Turf install','Pavers','Putting green','Artificial grass']}[trade]||['Service'];
+  const types={
+    Concrete:['Driveway','Stamped patio','Retaining wall','Flatwork','Garage slab','Walkway & steps'],
+    HVAC:['AC replacement','Furnace install','Mini split','Service call','Ductwork eval','New install'],
+    Turfing:['Turf install','Pavers','Putting green','Artificial grass','Sod install'],
+    Decking:['New deck build','Deck replacement','Composite deck','Deck repair','Pergola build'],
+    Remodeling:['Kitchen remodel','Bath remodel','Basement finish','Whole-home reno','Flooring'],
+    Roofing:['Roof replacement','Roof repair','Roof inspection','Storm-damage eval','Gutter & roof']
+  }[trade]||['Consultation','Estimate','Site visit'];
   const first=['James','Linda','Tom','Sarah','Derek','Patricia','Carl','Donna','Frank','Beverly','Steven','Nancy','Brian','Karen','Mike'];
-  const sts=['cf','cf','cl','cf','cf','cl','cf','pe'];
   const out=[];
-  for(let i=0;i<Math.min(n,8);i++){
-    const d=new Date(TODAY); d.setDate(DAY-i);
-    out.push({date:MN[d.getMonth()]+' '+d.getDate(),name:first[i%first.length]+' '+String.fromCharCode(65+i)+'.',type:types[i%types.length],status:sts[i%sts.length]});
+  const count=Math.min(n,8);
+  const upcoming=2; // first two are future bookings
+  for(let i=0;i<count;i++){
+    const d=new Date(TODAY);
+    let status;
+    if(i<upcoming){
+      d.setDate(DAY + (upcoming - i)); // future: +2 days, then +1 day
+      status='pe'; // Upcoming — only ever on a future date
+    } else {
+      const back=i-upcoming;
+      d.setDate(DAY - back); // today, then going back
+      status = (back%3===2) ? 'cl' : 'cf'; // past: mostly Confirmed, some Closed
+    }
+    out.push({date:MN[d.getMonth()]+' '+d.getDate(),name:first[i%first.length]+' '+String.fromCharCode(65+i)+'.',type:types[i%types.length],status});
   }
   return out;
 }
@@ -433,7 +450,14 @@ function demoWeekly(appts,spend){
   return w.map((p,i)=>({w:'Wk '+(i+1),a:Math.round(appts*p),s:Math.round(spend*p)}));
 }
 function demoCampaigns(trade,spend,appts){
-  const names={Concrete:['Driveway leads','Stamped concrete','Retaining wall'],HVAC:['AC replacement','HVAC service','Mini split'],Turfing:['Turf install','Pavers','Putting greens']}[trade]||['Campaign A','Campaign B','Campaign C'];
+  const names={
+    Concrete:['Driveway leads','Stamped concrete','Patios & flatwork'],
+    HVAC:['AC replacement','HVAC service','Mini split'],
+    Turfing:['Turf install','Pavers','Putting greens'],
+    Decking:['New deck builds','Composite decking','Deck repairs'],
+    Remodeling:['Kitchen & bath','Whole-home reno','Basement finish'],
+    Roofing:['Roof replacement','Storm damage','Roof repair']
+  }[trade]||['Search campaign','Retargeting','Lookalike'];
   const sp=[.5,.32,.18], ap=[.55,.3,.15];
   return names.map((n,i)=>({n,s:Math.round(spend*sp[i]),a:Math.max(1,Math.round(appts*ap[i]))}));
 }
