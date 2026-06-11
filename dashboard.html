@@ -28,19 +28,20 @@ input,select,button,textarea{font-family:inherit}
 a{color:inherit}
 
 /* ---------- Login ---------- */
-#login{position:fixed;inset:0;background:var(--green);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px}
-.login-card{background:var(--surface);border-radius:18px;padding:36px 32px;width:100%;max-width:380px}
+#login{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px}
+.login-card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:36px 32px;width:100%;max-width:380px;box-shadow:0 4px 24px rgba(0,0,0,.06)}
 .login-mark{display:flex;align-items:center;gap:10px;margin-bottom:24px}
-.login-mark .m{width:34px;height:34px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px}
-.login-mark .t{font-size:17px;font-weight:500;color:var(--ink)}
+.login-mark .m{display:flex;align-items:center;justify-content:center;font-size:24px}
+.login-mark .t{font-size:17px;font-weight:600;letter-spacing:-.014em;color:var(--ink)}
 .login-h{font-size:22px;color:var(--ink);margin-bottom:5px}
 .login-s{font-size:13px;color:var(--ink-2);margin-bottom:24px}
 .fld{margin-bottom:14px}
 .fld label{display:block;font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);margin-bottom:6px}
 .fld input{width:100%;padding:11px 13px;border:1px solid var(--line-2);border-radius:var(--r-sm);font-size:14px;color:var(--ink);background:var(--bg);outline:none;transition:border-color .15s,box-shadow .15s}
 .fld input:focus{border-color:var(--green-l);box-shadow:0 0 0 3px rgba(0,113,227,.12)}
-.btn-primary{width:100%;padding:12px;background:var(--green);color:#fff;border:none;border-radius:var(--r-sm);font-size:14px;font-weight:500;cursor:pointer;transition:background .15s}
-.btn-primary:hover{background:var(--green-l)}
+.btn-primary{width:100%;padding:13px;background:var(--ink);color:#fff;border:none;border-radius:980px;font-size:15px;font-weight:500;letter-spacing:-.01em;cursor:pointer;transition:background .2s,transform .1s}
+.btn-primary:hover{background:#000}
+.btn-primary:active{transform:scale(.985)}
 .btn-primary:disabled{opacity:.6;cursor:not-allowed}
 .login-err{font-size:12px;color:var(--bad);margin-top:12px;display:none}
 .login-demo{margin-top:18px;padding-top:18px;border-top:1px solid var(--line);text-align:center}
@@ -51,7 +52,7 @@ a{color:inherit}
 #app{display:none}
 .topnav{background:rgba(255,255,255,.72);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);height:52px;padding:0 22px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;border-bottom:1px solid var(--line)}
 .tn-l{display:flex;align-items:center;gap:10px}
-.tn-mark{width:28px;height:28px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px}
+.tn-mark{display:flex;align-items:center;justify-content:center;font-size:18px}
 .tn-word{color:var(--ink);font-weight:600;font-size:14px;letter-spacing:-.01em}
 .tn-bc{font-size:13px;color:var(--ink-2)}
 .tn-bc .sep{color:var(--ink-3);margin:0 6px}.tn-bc .cur{color:var(--ink);font-weight:500}
@@ -82,7 +83,7 @@ a{color:inherit}
 .sec-s{font-size:12px;color:var(--ink-2);margin-bottom:14px}
 
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;margin-bottom:13px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
-.card.gn{background:var(--green);border-color:transparent}
+.card.gn{background:var(--ink);border-color:transparent}
 .card.gs{background:var(--ok-bg);border-color:var(--ok-br)}
 .card.sur{background:var(--surface-2);border-color:transparent}
 .grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
@@ -123,13 +124,13 @@ a{color:inherit}
 
 /* metric cards (client view) */
 .mc{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:13px 15px}
-.mc.gn{background:var(--green);border-color:transparent}
+.mc.gn{background:var(--ink);border-color:transparent}
 .mc-l{font-size:9px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-2);margin-bottom:7px}
-.mc.gn .mc-l{color:#6e6e73}
+.mc.gn .mc-l{color:rgba(255,255,255,.62)}
 .mc-v{font-size:19px;font-weight:500;color:var(--ink);line-height:1}
 .mc.gn .mc-v{color:#fff}
 .mc-m{display:flex;align-items:center;gap:5px;margin-top:5px}
-.mc-s{font-size:10px;color:var(--ink-2)}.mc.gn .mc-s{color:#6e6e73}
+.mc-s{font-size:10px;color:var(--ink-2)}.mc.gn .mc-s{color:rgba(255,255,255,.62)}
 
 .back{background:none;border:1px solid var(--line-2);border-radius:var(--r-sm);padding:7px 14px;cursor:pointer;font-size:12px;color:var(--ink-2);margin-bottom:14px;display:inline-flex;align-items:center;gap:5px}
 .back:hover{background:var(--surface-2)}
@@ -151,8 +152,8 @@ input[type=range]{accent-color:var(--green-l);width:100%;height:5px}
 .delbtn:hover{color:var(--bad);background:var(--bad-bg)}
 .addbtn{background:none;border:1px dashed var(--line-2);border-radius:var(--r-sm);padding:9px 14px;cursor:pointer;font-size:12px;color:var(--ink-2);width:100%;margin-top:10px}
 .addbtn:hover{border-color:var(--green-l);color:var(--green-l)}
-.savebtn{background:var(--green-l);border:none;border-radius:var(--r-sm);padding:8px 16px;cursor:pointer;font-size:12px;color:#fff;font-weight:500}
-.savebtn:hover{background:var(--green)}
+.savebtn{background:var(--ink);border:none;border-radius:var(--r-sm);padding:8px 16px;cursor:pointer;font-size:12px;color:#fff;font-weight:500}
+.savebtn:hover{background:#000}
 .prog-wrap{background:var(--surface-2);border-radius:100px;height:7px;overflow:hidden;margin:5px 0 9px}
 .prog-fill{height:100%;border-radius:100px;background:var(--green-l)}
 .alert{padding:10px 13px;border-radius:var(--r-sm);font-size:12px;display:flex;gap:8px;align-items:flex-start}
@@ -164,11 +165,11 @@ input[type=range]{accent-color:var(--green-l);width:100%;height:5px}
 .empty .ico{font-size:34px;margin-bottom:10px;opacity:.4}
 .spin{width:30px;height:30px;border:3px solid var(--line);border-top-color:var(--green-l);border-radius:50%;animation:sp .7s linear infinite;margin:50px auto}
 @keyframes sp{to{transform:rotate(360deg)}}
-.save-toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--green);color:#fff;padding:10px 20px;border-radius:100px;font-size:13px;opacity:0;transition:transform .3s,opacity .3s;z-index:200}
+.save-toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:#fff;padding:10px 20px;border-radius:100px;font-size:13px;opacity:0;transition:transform .3s,opacity .3s;z-index:200}
 .save-toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 
 /* ---------- Live activity calendar ---------- */
-.la-hd{background:linear-gradient(135deg,var(--green),var(--green-l));border-radius:var(--r);padding:20px 22px;margin-bottom:16px;color:#fff}
+.la-hd{background:var(--ink);border-radius:var(--r);padding:20px 22px;margin-bottom:16px;color:#fff}
 .la-hd .t{font-size:20px;margin-bottom:5px}
 .la-hd .s{font-size:13px;color:#A7E3B5;max-width:560px;line-height:1.5}
 .la-live{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#ffffff;background:rgba(255,255,255,.12);padding:4px 11px;border-radius:100px;margin-bottom:12px}
@@ -177,7 +178,7 @@ input[type=range]{accent-color:var(--green-l);width:100%;height:5px}
 .cal-toolbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:13px}
 .cal-pills{display:flex;gap:6px;flex-wrap:wrap}
 .cal-pill{padding:6px 13px;border-radius:100px;border:1px solid var(--line-2);background:var(--surface);color:var(--ink-2);font-size:12px;font-weight:500;cursor:pointer}
-.cal-pill.act{background:var(--green);border-color:var(--green);color:#fff}
+.cal-pill.act{background:var(--ink);border-color:var(--ink);color:#fff}
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
 .cal-dow{font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);text-align:center;padding:4px 0}
 .cal-cell{background:var(--surface);border:1px solid var(--line);border-radius:9px;min-height:92px;padding:6px 6px 7px;display:flex;flex-direction:column;gap:3px;position:relative;overflow:hidden}
@@ -194,7 +195,7 @@ span.nm{filter:blur(3.5px);user-select:none;-webkit-user-select:none;pointer-eve
 .cal-newbadge{position:absolute;top:5px;right:5px;font-size:7px;font-weight:700;letter-spacing:.04em;color:#fff;background:var(--accent);padding:1px 5px;border-radius:100px}
 .la-stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px}
 .la-stat .n{font-size:22px;font-weight:500;color:var(--ink)}
-.la-stat.gn{background:var(--green);border-color:transparent}.la-stat.gn .n{color:#fff}
+.la-stat.gn{background:var(--ink);border-color:transparent}.la-stat.gn .n{color:#fff}
 .la-note{font-size:11px;color:var(--ink-3);margin-top:13px;text-align:center}
 </style>
 </head>
@@ -243,6 +244,7 @@ span.nm{filter:blur(3.5px);user-select:none;-webkit-user-select:none;pointer-eve
 <div class="save-toast" id="toast">Saved</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
 /* ════════════════════════════════════════════════════════════
    CONFIG — the only place you edit if anything changes.
@@ -365,13 +367,32 @@ function enterDemo(){
   renderShell(); routeAdminOrClient();
 }
 function recomputeDemoForPeriod(){
-  const mult=S.period.months;
+  const N=S.period.months;
   S.clients.forEach(c=>{
     const b=c._base||{appts:c.appts,spend:c.spend};
-    c.appts=Math.round(b.appts*mult);
-    c.spend=Math.round(b.spend*mult);
-    c.prev={appts:Math.round(c.appts*.82),spend:Math.round(c.spend*.9)};
-    c.weekly = mult<=1 ? demoWeekly(c.appts,c.spend) : demoMonthly(c.appts);
+    const cpa=b.appts>0? b.spend/b.appts : 0;   // locked per client
+    let appts;
+    if(N<=1){
+      appts=b.appts;                            // this/last month = exact reconciled base
+    } else {
+      // real multi-month data is not a clean x N multiple — vary it deterministically
+      let idSeed=0; for(const ch of c.id) idSeed+=ch.charCodeAt(0);
+      const r=laRng(idSeed*131+N*7);
+      const flat=b.appts*N;
+      const baseRatio=b.appts/CONFIG.guarantee;  // >=1 means meeting the monthly guarantee
+      // a stable ~1-in-4 of the strong clients reads as newer/ramping in every multi-month view
+      const isNewer = baseRatio>=1.05 && laRng(idSeed*977)()<0.28;
+      const factor = isNewer ? (0.80+r()*0.07)   // newer: ~80-87% of a full history (stays >=80% of goal, never red)
+                             : (0.95+r()*0.12);   // established: natural +/- a few % around flat
+      appts=Math.round(flat*factor);
+    }
+    c.appts=appts;
+    c.spend=Math.round(appts*cpa);               // CPA stays constant -> spend reconciles exactly
+    // per-client prior-period delta (deterministic) so growth isn't a flat +22% on every card
+    let s2=0; for(const ch of c.id) s2+=ch.charCodeAt(0);
+    const r2=laRng(s2*29+N*5); const gf=0.80+r2()*0.12;
+    c.prev={appts:Math.round(appts*gf),spend:Math.round(c.spend*Math.min(0.97,gf+0.05))};
+    c.weekly = N<=1 ? demoWeekly(c.appts,c.spend) : demoMonthly(c.appts);
   });
 }
 function demoMonthly(appts){
@@ -1021,7 +1042,7 @@ function drawBudget(c){
   </div>
   <div class="sec-s">${esc(c.name)} · all calculations live · revenue &amp; jobs pulled from your dashboard</div>
   <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:15px">
-    ${tabs.map(([k,l])=>`<button onclick="bswitch('${k}')" style="padding:7px 14px;border-radius:100px;border:1px solid ${b.btab===k?'var(--green-l)':'var(--line-2)'};background:${b.btab===k?'var(--green)':'transparent'};color:${b.btab===k?'#fff':'var(--ink-2)'};font-size:12px;font-weight:500;cursor:pointer">${l}</button>`).join('')}
+    ${tabs.map(([k,l])=>`<button onclick="bswitch('${k}')" style="padding:7px 14px;border-radius:100px;border:1px solid ${b.btab===k?'var(--ink)':'var(--line-2)'};background:${b.btab===k?'var(--ink)':'transparent'};color:${b.btab===k?'#fff':'var(--ink-2)'};font-size:12px;font-weight:500;cursor:pointer">${l}</button>`).join('')}
   </div>
   <div id="budget-body"></div>`;
   el('view').innerHTML=html;
