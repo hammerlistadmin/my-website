@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The Hammer List — Dashboard</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox=%220 0 240 152%22 xmlns=%22http://www.w3.org/2000/svg%22 fill=%22none%22%3E%3Cline x1=%2224%22 y1=%22130%22 x2=%22104%22 y2=%2244%22 stroke=%22%231e4e9c%22 stroke-width=%2215%22/%3E%3Cline x1=%22104%22 y1=%2241%22 x2=%22142%22 y2=%2272%22 stroke=%22%231e4e9c%22 stroke-width=%2227%22 stroke-linecap=%22square%22/%3E%3Cpath fill=%22%231e4e9c%22 d=%22M128 40Q106 8 70 3Q75 30 102 49Q116 58 126 50Z%22/%3E%3Cline x1=%22160%22 y1=%2290%22 x2=%22214%22 y2=%22130%22 stroke=%22%231e4e9c%22 stroke-width=%2215%22/%3E%3Crect x=%22100%22 y=%2292%22 width=%2216%22 height=%2216%22 fill=%22%231e4e9c%22/%3E%3Crect x=%22122%22 y=%2292%22 width=%2216%22 height=%2216%22 fill=%22%231e4e9c%22/%3E%3Crect x=%22100%22 y=%22114%22 width=%2216%22 height=%2216%22 fill=%22%231e4e9c%22/%3E%3Crect x=%22122%22 y=%22114%22 width=%2216%22 height=%2216%22 fill=%22%231e4e9c%22/%3E%3Crect x=%2220%22 y=%22140%22 width=%22200%22 height=%229%22 rx=%222%22 fill=%22%231e4e9c%22/%3E%3C/svg%3E">
 <style>
 /* ============================================================
    CONFIG NOTE: All Supabase settings live in the <script> at the
@@ -31,8 +32,8 @@ a{color:inherit}
 #login{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px}
 .login-card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:36px 32px;width:100%;max-width:380px;box-shadow:0 4px 24px rgba(0,0,0,.06)}
 .login-mark{display:flex;align-items:center;gap:10px;margin-bottom:24px}
-.login-mark .m{display:flex;align-items:center;justify-content:center;font-size:24px}
-.login-mark .t{font-size:17px;font-weight:600;letter-spacing:-.014em;color:var(--ink)}
+.login-mark .m{display:flex;align-items:center;color:var(--ink)}.login-mark .m svg{height:42px;width:auto;display:block}
+.login-mark .t{font-size:13px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--ink)}
 .login-h{font-size:22px;color:var(--ink);margin-bottom:5px}
 .login-s{font-size:13px;color:var(--ink-2);margin-bottom:24px}
 .fld{margin-bottom:14px}
@@ -52,8 +53,8 @@ a{color:inherit}
 #app{display:none}
 .topnav{background:rgba(255,255,255,.72);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);height:52px;padding:0 22px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;border-bottom:1px solid var(--line)}
 .tn-l{display:flex;align-items:center;gap:10px}
-.tn-mark{display:flex;align-items:center;justify-content:center;font-size:18px}
-.tn-word{color:var(--ink);font-weight:600;font-size:14px;letter-spacing:-.01em}
+.tn-mark{display:flex;align-items:center;color:var(--ink)}.tn-mark svg{height:24px;width:auto;display:block}
+.tn-word{color:var(--ink);font-weight:600;font-size:12px;letter-spacing:.18em;text-transform:uppercase}
 .tn-bc{font-size:13px;color:var(--ink-2)}
 .tn-bc .sep{color:var(--ink-3);margin:0 6px}.tn-bc .cur{color:var(--ink);font-weight:500}
 .tn-bc .lnk{cursor:pointer}.tn-bc .lnk:hover{color:var(--accent)}
@@ -206,7 +207,7 @@ span.nm{filter:blur(3.5px);user-select:none;-webkit-user-select:none;pointer-eve
 <!-- ============ LOGIN ============ -->
 <div id="login">
   <div class="login-card">
-    <div class="login-mark"><div class="m">🔨</div><div class="t">The Hammer List</div></div>
+    <div class="login-mark"><span class="m"><svg viewBox="0 0 240 152" xmlns="http://www.w3.org/2000/svg" fill="none"><line x1="24" y1="130" x2="104" y2="44" stroke="currentColor" stroke-width="15"/><line x1="104" y1="41" x2="142" y2="72" stroke="currentColor" stroke-width="27" stroke-linecap="square"/><path fill="currentColor" d="M128 40Q106 8 70 3Q75 30 102 49Q116 58 126 50Z"/><line x1="160" y1="90" x2="214" y2="130" stroke="currentColor" stroke-width="15"/><rect x="100" y="92" width="16" height="16" fill="currentColor"/><rect x="122" y="92" width="16" height="16" fill="currentColor"/><rect x="100" y="114" width="16" height="16" fill="currentColor"/><rect x="122" y="114" width="16" height="16" fill="currentColor"/><rect x="20" y="140" width="200" height="9" rx="2" fill="currentColor"/></svg></span><div class="t">The Hammer List</div></div>
     <div class="login-h serif">Welcome back</div>
     <div class="login-s">Sign in to your growth dashboard</div>
     <div class="fld"><label>Email</label><input type="email" id="li-email" placeholder="you@company.com" autocomplete="email"></div>
@@ -221,7 +222,7 @@ span.nm{filter:blur(3.5px);user-select:none;-webkit-user-select:none;pointer-eve
 <div id="app">
   <div class="topnav">
     <div class="tn-l">
-      <div class="tn-mark">🔨</div>
+      <span class="tn-mark"><svg viewBox="0 0 240 152" xmlns="http://www.w3.org/2000/svg" fill="none"><line x1="24" y1="130" x2="104" y2="44" stroke="currentColor" stroke-width="15"/><line x1="104" y1="41" x2="142" y2="72" stroke="currentColor" stroke-width="27" stroke-linecap="square"/><path fill="currentColor" d="M128 40Q106 8 70 3Q75 30 102 49Q116 58 126 50Z"/><line x1="160" y1="90" x2="214" y2="130" stroke="currentColor" stroke-width="15"/><rect x="100" y="92" width="16" height="16" fill="currentColor"/><rect x="122" y="92" width="16" height="16" fill="currentColor"/><rect x="100" y="114" width="16" height="16" fill="currentColor"/><rect x="122" y="114" width="16" height="16" fill="currentColor"/><rect x="20" y="140" width="200" height="9" rx="2" fill="currentColor"/></svg></span>
       <div class="tn-word">The Hammer List</div>
     </div>
     <div class="tn-bc" id="bc"></div>
