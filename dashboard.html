@@ -144,6 +144,8 @@ a{color:inherit}
 .as-cf{color:#248A3D;background:#E3F9E9}.as-cl{color:#fff;background:#248A3D}.as-ns{color:#b00010;background:#FFEBE9}.as-pe{color:#6e6e73;background:#f5f5f7}
 
 /* budget inputs */
+summary::-webkit-details-marker{display:none}
+summary{outline:none}
 .inp{background:var(--bg);border:1px solid var(--line-2);border-radius:var(--r-sm);padding:8px 11px;font-size:14px;color:var(--ink);width:100%;outline:none;transition:border-color .15s,box-shadow .15s}
 .inp:focus{border-color:var(--green-l);box-shadow:0 0 0 3px rgba(0,113,227,.1)}
 .inp.serif{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif;font-weight:600;letter-spacing:-.022em}
@@ -1018,12 +1020,20 @@ async function renderBudget(){
 }
 function bupd(k,v){
   const num=['rev','cj','otherRev','otherExp','matPct','labPct','subPct','jMat','jLab','tgtM','annGoal','cfAp','cfCr'];
-  S.budget[k]= num.includes(k)? (Number(v)||0) : v;
+  S.budget[k]= num.includes(k)? (Number(String(v).replace(/[^0-9.\-]/g,''))||0) : v;
   const c=S.clients.find(x=>x.id===S.activeClientId);
   drawBudget(c);
 }
+function bfmt$(v){ return '$'+(Number(v)||0).toLocaleString('en-US'); }
+function bCostPreset(p){
+  const c=S.clients.find(x=>x.id===S.activeClientId);
+  const T=TRADE_DEFAULTS[tradeKey(c.trade)];
+  const d=p==='lean'?-4:p==='heavy'?5:0;
+  S.budget.matPct=Math.max(0,T.mat+d); S.budget.labPct=Math.max(0,T.lab+d); S.budget.subPct=T.sub;
+  drawBudget(c);
+}
 function bswitch(t){ S.budget.btab=t; drawBudget(S.clients.find(x=>x.id===S.activeClientId)); }
-function updOH(id,v){ const it=S.budget.ohItems.find(x=>x.id===id); if(it){it.a=Number(v)||0; drawBudget(S.clients.find(x=>x.id===S.activeClientId));} }
+function updOH(id,v){ const it=S.budget.ohItems.find(x=>x.id===id); if(it){it.a=Number(String(v).replace(/[^0-9.]/g,''))||0; drawBudget(S.clients.find(x=>x.id===S.activeClientId));} }
 function delOH(id){ S.budget.ohItems=S.budget.ohItems.filter(x=>x.id!==id); drawBudget(S.clients.find(x=>x.id===S.activeClientId)); }
 function addOH(){ S.budget.ohItems.push({id:bid++,n:'New item',c:'Other',a:0}); drawBudget(S.clients.find(x=>x.id===S.activeClientId)); setTimeout(()=>{const inp=document.querySelector('#oh-list .oh-name:last-child');if(inp)inp.focus();},30); }
 function updOHName(id,v){ const it=S.budget.ohItems.find(x=>x.id===id); if(it)it.n=v; }
@@ -1064,17 +1074,43 @@ function budgetCalc(c){
 
 function drawBudget(c){
   const x=budgetCalc(c), b=S.budget;
-  const tabs=[['pl','P&L'],['oh','Overhead'],['markup','Markup'],['be','Break-even'],['cf','Cash flow']];
+  const tabs=[['pl','Profit'],['oh','Monthly bills'],['markup','Price a job'],['be','Break-even'],['cf','Cash flow']];
+  const tabSub={pl:'Your money in one view — adjust anything, everything updates',oh:'The fixed bills you pay every month no matter what',markup:'What to charge on a job to hit your margin',be:'How many jobs cover the bills — and hit your income goal',cf:'The next 6 months, with your trade\u2019s seasonality baked in'};
+  // ── hero: where every dollar goes ──
+  const ohAll=x.tOH+b.otherExp;
+  const ohShare=x.tRev>0?Math.round(ohAll/x.tRev*100):0;
+  const costShare=Math.min(100,x.dPct);
+  const profShare=Math.max(0,100-costShare-ohShare);
+  const losing=x.np<0;
+  const hero=`
+  <div class="card" style="margin-bottom:15px">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+      <div class="serif" style="font-size:22px;${losing?'color:var(--bad)':''}">${losing?'These numbers lose money':'You keep '+x.nm+'\u00A2 of every $1'}</div>
+      <div style="font-size:12px;color:var(--ink-2)">${losing?f$(Math.abs(x.np))+' short on '+f$(x.tRev)+' revenue':f$(x.np)+' net profit on '+f$(x.tRev)+' revenue'}</div>
+    </div>
+    <div style="display:flex;height:14px;border-radius:100px;overflow:hidden;background:var(--surface-2)">
+      <div style="width:${costShare}%;background:#c7c7cc"></div>
+      <div style="width:${ohShare}%;background:#FF9500"></div>
+      <div style="width:${profShare}%;background:#34C759"></div>
+    </div>
+    <div style="display:flex;gap:16px;margin-top:9px;flex-wrap:wrap;font-size:11px;color:var(--ink-2)">
+      <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#c7c7cc;margin-right:5px"></span>Job costs ${costShare}\u00A2</span>
+      <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#FF9500;margin-right:5px"></span>Bills ${ohShare}\u00A2</span>
+      <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#34C759;margin-right:5px"></span>Profit ${profShare}\u00A2</span>
+    </div>
+  </div>`;
   let html=`
   ${S.isAdmin?'<button class="back" onclick="goPortfolio()">← Portfolio</button>':''}
   <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:4px">
     <div><span class="serif" style="font-size:20px">Budget &amp; finance</span> <span class="trade" style="margin-left:6px">${esc(c.trade)}</span></div>
     <button class="savebtn" onclick="saveBudget()">${S.demo?'Save (demo)':'Save'}</button>
   </div>
-  <div class="sec-s">${esc(c.name)} · all calculations live · revenue &amp; jobs pulled from your dashboard</div>
-  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:15px">
+  <div class="sec-s">${esc(c.name)} · numbers pulled live from your dashboard</div>
+  ${hero}
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">
     ${tabs.map(([k,l])=>`<button onclick="bswitch('${k}')" style="padding:7px 14px;border-radius:100px;border:1px solid ${b.btab===k?'var(--ink)':'var(--line-2)'};background:${b.btab===k?'var(--ink)':'transparent'};color:${b.btab===k?'#fff':'var(--ink-2)'};font-size:12px;font-weight:500;cursor:pointer">${l}</button>`).join('')}
   </div>
+  <div style="font-size:11px;color:var(--ink-3);margin-bottom:13px">${tabSub[b.btab]||''}</div>
   <div id="budget-body"></div>`;
   el('view').innerHTML=html;
   const body=el('budget-body');
@@ -1089,31 +1125,43 @@ function bPL(x){
   const{T,b,tRev,mC,lC,sC,dC,dPct,gp,gm,tOH,ohPJ,np,nm}=x;
   const gBench=gm>=T.bG[0]?{c:'chip-on',t:'Above avg ✓'}:gm>=T.bG[0]*.75?{c:'chip-at',t:'Near avg'}:{c:'chip-bh',t:'Below avg'};
   const nBench=np<0?{c:'chip-bh',t:'Loss'}:nm>=T.bN[0]?{c:'chip-on',t:'Above avg ✓'}:nm>=T.bN[0]*.75?{c:'chip-at',t:'Near avg'}:{c:'chip-bh',t:'Below avg'};
-  const sl=(k,lbl,val,max)=>`<div style="margin-bottom:11px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:11px;color:var(--ink-2)">${lbl}</span><span class="serif" style="font-size:13px">${b[k]}% · ${f$(val)}</span></div><input type="range" min="0" max="${max}" step="1" value="${b[k]}" oninput="bupd('${k}',this.value)"></div>`;
+  // smooth slider: label updates live while dragging, math recalculates on release
+  const sl=(k,lbl,val,max)=>`<div style="margin-bottom:11px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:11px;color:var(--ink-2)">${lbl}</span><span class="serif" style="font-size:13px" id="sl-${k}">${b[k]}% · ${f$(val)}</span></div><input type="range" min="0" max="${max}" step="1" value="${b[k]}" oninput="el('sl-${k}').textContent=this.value+'% · '+f$(Math.round(${tRev}*this.value/100))" onchange="bupd('${k}',this.value)"></div>`;
+  const isTypical=b.matPct===T.mat&&b.labPct===T.lab;
   return `
-  <div class="card"><div class="sec-t" style="font-size:13px">Revenue <span style="font-size:10px;font-weight:400;color:var(--ok);background:var(--ok-bg);padding:2px 7px;border-radius:100px;margin-left:6px">auto-filled from dashboard</span></div>
+  <div class="card"><div class="sec-t" style="font-size:13px">Revenue <span style="font-size:10px;font-weight:400;color:var(--ok);background:var(--ok-bg);padding:2px 7px;border-radius:100px;margin-left:6px">auto-filled from your dashboard</span></div>
     <div class="grid3">
-      <div><span class="lbl">Closed job revenue</span><input class="inp serif" type="number" value="${b.rev}" oninput="bupd('rev',this.value)"></div>
-      <div><span class="lbl">Jobs closed</span><input class="inp serif" type="number" value="${b.cj}" oninput="bupd('cj',this.value)"></div>
-      <div><span class="lbl">Other revenue</span><input class="inp serif" type="number" value="${b.otherRev}" oninput="bupd('otherRev',this.value)"></div>
+      <div><span class="lbl">Closed job revenue</span><input class="inp serif" inputmode="numeric" value="${bfmt$(b.rev)}" onchange="bupd('rev',this.value)"></div>
+      <div><span class="lbl">Jobs closed</span><input class="inp serif" type="number" value="${b.cj}" onchange="bupd('cj',this.value)"></div>
+      <div><span class="lbl">Other revenue</span><input class="inp serif" inputmode="numeric" value="${bfmt$(b.otherRev)}" onchange="bupd('otherRev',this.value)"></div>
     </div>
   </div>
-  <div class="card"><div class="sec-t" style="font-size:13px">Direct costs</div>
+  <div class="card"><div class="sec-t" style="font-size:13px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><span>What jobs cost you</span>
+    <span style="display:flex;gap:5px">
+      <button onclick="bCostPreset('lean')" style="padding:4px 11px;border-radius:100px;border:1px solid var(--line-2);background:transparent;color:var(--ink-2);font-size:10px;font-weight:500;cursor:pointer">Lean</button>
+      <button onclick="bCostPreset('typical')" style="padding:4px 11px;border-radius:100px;border:1px solid ${isTypical?'var(--ink)':'var(--line-2)'};background:${isTypical?'var(--ink)':'transparent'};color:${isTypical?'#fff':'var(--ink-2)'};font-size:10px;font-weight:500;cursor:pointer">Typical ${tradeKey(S.clients.find(y=>y.id===S.activeClientId).trade).toLowerCase()}</button>
+      <button onclick="bCostPreset('heavy')" style="padding:4px 11px;border-radius:100px;border:1px solid var(--line-2);background:transparent;color:var(--ink-2);font-size:10px;font-weight:500;cursor:pointer">Heavy</button>
+    </span></div>
     ${sl('matPct','Materials',mC,70)}${sl('labPct','Labor',lC,70)}${sl('subPct','Subcontractors',sC,40)}
-    <div class="row" style="border-top:1px solid var(--line-2)"><span style="font-size:12px;font-weight:500">Total direct costs</span><span class="serif" style="font-size:14px">${f$(dC)} · ${fp(dPct)}</span></div>
+    <div class="row" style="border-top:1px solid var(--line-2)"><span style="font-size:12px;font-weight:500">Total job costs</span><span class="serif" style="font-size:14px">${f$(dC)} · ${fp(dPct)}</span></div>
   </div>
   <div class="grid2">
-    <div class="card gs"><span class="lbl">Gross profit</span><div class="num">${f$(gp)}</div><div style="margin-top:6px;display:flex;align-items:center;gap:7px"><span class="serif" style="font-size:14px;color:#0b6b2e">${fp(gm)}</span><span class="chip ${gBench.c}">${gBench.t}</span></div><div class="sub">industry avg ${T.bG[0]}–${T.bG[1]}%</div></div>
-    <div class="card"><span class="lbl">Net profit</span><div class="num" style="color:${np<0?'var(--bad)':'var(--ink)'}">${f$(np)}</div><div style="margin-top:6px;display:flex;align-items:center;gap:7px"><span class="serif" style="font-size:14px;color:${np<0?'var(--bad)':'var(--ink)'}">${fp(Math.abs(nm))}${nm<0?' loss':''}</span><span class="chip ${nBench.c}">${nBench.t}</span></div><div class="sub">after ${f$(tOH)} overhead · avg ${T.bN[0]}–${T.bN[1]}%</div></div>
+    <div class="card gs"><span class="lbl">Gross profit</span><div class="num">${f$(gp)}</div><div style="margin-top:6px;display:flex;align-items:center;gap:7px"><span class="serif" style="font-size:14px;color:#0b6b2e">${fp(gm)}</span><span class="chip ${gBench.c}">${gBench.t}</span></div><div class="sub">what's left after job costs · industry ${T.bG[0]}–${T.bG[1]}%</div></div>
+    <div class="card"><span class="lbl">Net profit</span><div class="num" style="color:${np<0?'var(--bad)':'var(--ink)'}">${f$(np)}</div><div style="margin-top:6px;display:flex;align-items:center;gap:7px"><span class="serif" style="font-size:14px;color:${np<0?'var(--bad)':'var(--ink)'}">${fp(Math.abs(nm))}${nm<0?' loss':''}</span><span class="chip ${nBench.c}">${nBench.t}</span></div><div class="sub">what you actually keep · industry ${T.bN[0]}–${T.bN[1]}%</div></div>
   </div>
   <div class="card sur" style="display:flex;align-items:center;justify-content:space-between">
-    <div><span class="lbl">Monthly overhead</span><div class="serif" style="font-size:18px">${f$(tOH)}</div><div class="sub">${f$(ohPJ)} per closed job</div></div>
+    <div><span class="lbl">Monthly bills</span><div class="serif" style="font-size:18px">${f$(tOH)}</div><div class="sub">${f$(ohPJ)} per closed job</div></div>
     <button class="back" style="margin:0" onclick="bswitch('oh')">Edit →</button>
   </div>
-  <div class="card"><div class="sec-t" style="font-size:13px">P&L summary</div>
-    ${[['Revenue',f$(tRev),'100%',false,false],['Direct costs','−'+f$(dC),fp(dPct),true,false],['Gross profit',f$(gp),fp(gm),false,true],['Overhead','−'+f$(tOH),'',true,false],['Other expenses','−'+f$(b.otherExp),'',true,false],['Net profit',f$(np),fp(Math.abs(nm))+(nm<0?' loss':''),false,true]].map(([l,v,p,m,bld])=>`<div class="row"><span style="font-size:12px;color:${m?'var(--ink-2)':'var(--ink)'};font-weight:${bld?500:400}">${l}</span><div style="text-align:right"><div class="serif" style="font-size:13px;font-weight:${bld?500:400};color:${l==='Net profit'?(np<0?'var(--bad)':'var(--green-l)'):'var(--ink)'}">${v}</div>${p?`<div style="font-size:9px;color:var(--ink-2)">${p}</div>`:''}</div></div>`).join('')}
-  </div>
-  <div style="margin-top:11px"><span class="lbl">Other expenses this month</span><div style="max-width:200px"><input class="inp serif" type="number" value="${b.otherExp}" oninput="bupd('otherExp',this.value)" placeholder="0"></div></div>`;
+  <div class="card">
+    <details>
+      <summary style="font-size:12px;font-weight:500;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center"><span>Full P&amp;L statement</span><span style="font-size:11px;color:var(--ink-3)">show ▾</span></summary>
+      <div style="margin-top:10px">
+      ${[['Revenue',f$(tRev),'100%',false,false],['Job costs','−'+f$(dC),fp(dPct),true,false],['Gross profit',f$(gp),fp(gm),false,true],['Monthly bills','−'+f$(tOH),'',true,false],['Other expenses','−'+f$(b.otherExp),'',true,false],['Net profit',f$(np),fp(Math.abs(nm))+(nm<0?' loss':''),false,true]].map(([l,v,p,m,bld])=>`<div class="row"><span style="font-size:12px;color:${m?'var(--ink-2)':'var(--ink)'};font-weight:${bld?500:400}">${l}</span><div style="text-align:right"><div class="serif" style="font-size:13px;font-weight:${bld?500:400};color:${l==='Net profit'?(np<0?'var(--bad)':'var(--green-l)'):'var(--ink)'}">${v}</div>${p?`<div style="font-size:9px;color:var(--ink-2)">${p}</div>`:''}</div></div>`).join('')}
+      <div style="margin-top:11px"><span class="lbl">Other expenses this month</span><div style="max-width:200px"><input class="inp serif" inputmode="numeric" value="${bfmt$(b.otherExp)}" onchange="bupd('otherExp',this.value)" placeholder="$0"></div></div>
+      </div>
+    </details>
+  </div>`;
 }
 
 function bOH(x){
@@ -1134,7 +1182,7 @@ function bOH(x){
     <div style="display:grid;grid-template-columns:1fr 120px 30px;gap:9px;padding-bottom:6px;border-bottom:1px solid var(--line)"><span class="th">Item</span><span class="th">$/month</span><span></span></div>
     ${b.ohItems.map(it=>`<div style="display:grid;grid-template-columns:1fr 120px 30px;gap:9px;align-items:center;padding:7px 0;border-top:1px solid var(--line)">
       <div><input class="inp oh-name" style="padding:5px 8px;font-size:12px;margin-bottom:2px" value="${esc(it.n)}" oninput="updOHName(${it.id},this.value)"><div style="font-size:9px;color:var(--ink-3);padding-left:2px">${esc(it.c)}</div></div>
-      <input class="inp serif" style="padding:6px 9px;font-size:13px" type="number" value="${it.a}" oninput="updOH(${it.id},this.value)">
+      <input class="inp serif" style="padding:6px 9px;font-size:13px" inputmode="numeric" value="${bfmt$(it.a)}" onchange="updOH(${it.id},this.value)">
       <button class="delbtn" onclick="delOH(${it.id})" aria-label="Delete">×</button>
     </div>`).join('')}
     <div class="row" style="border-top:1px solid var(--line-2)"><span style="font-size:12px;font-weight:500">Total</span><span class="serif" style="font-size:17px">${f$(tOH)}/mo</span></div>
@@ -1149,15 +1197,15 @@ function bMarkup(x){
   <div class="card sur"><div class="sec-t" style="font-size:13px;border:none;padding:0">Job details</div>
     <div style="margin-bottom:11px"><span class="lbl">Job type / name</span><input class="inp" style="font-size:13px" type="text" value="${esc(b.jobType)}" oninput="bupd('jobType',this.value)" placeholder="e.g. Full A/C replacement"></div>
     <div class="grid2" style="margin-bottom:11px">
-      <div><span class="lbl">Materials cost</span><input class="inp serif" type="number" value="${b.jMat}" oninput="bupd('jMat',this.value)"></div>
-      <div><span class="lbl">Labor cost</span><input class="inp serif" type="number" value="${b.jLab}" oninput="bupd('jLab',this.value)"></div>
+      <div><span class="lbl">Materials cost</span><input class="inp serif" inputmode="numeric" value="${bfmt$(b.jMat)}" onchange="bupd('jMat',this.value)"></div>
+      <div><span class="lbl">Labor cost</span><input class="inp serif" inputmode="numeric" value="${bfmt$(b.jLab)}" onchange="bupd('jLab',this.value)"></div>
     </div>
     ${[['Materials',b.jMat,false],['Labor',b.jLab,false],['Overhead allocation',ohPJ,true]].map(([l,v,m])=>`<div class="row"><span style="font-size:11px;color:${m?'var(--ink-2)':'var(--ink)'}">${l}</span><span class="serif" style="font-size:12px;color:${m?'var(--ink-2)':'var(--ink)'}">${f$(v)}</span></div>`).join('')}
     <div class="row" style="border-top:1px solid var(--ok-br)"><span style="font-size:12px;font-weight:500">Total cost</span><span class="serif" style="font-size:15px">${f$(tjc)}</span></div>
   </div>
   <div class="card"><div style="font-size:12px;font-weight:500;margin-bottom:11px">Target gross margin</div>
-    <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:11px;color:var(--ink-2)">Target</span><span class="serif" style="font-size:14px">${b.tgtM}%</span></div>
-    <input type="range" min="5" max="75" step="1" value="${b.tgtM}" oninput="bupd('tgtM',this.value)">
+    <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:11px;color:var(--ink-2)">Target</span><span class="serif" style="font-size:14px" id="sl-tgtM">${b.tgtM}%</span></div>
+    <input type="range" min="5" max="75" step="1" value="${b.tgtM}" oninput="el('sl-tgtM').textContent=this.value+'%'" onchange="bupd('tgtM',this.value)">
     <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--ink-2);margin-top:4px"><span>5%</span><span>avg ${T.bG[0]}–${T.bG[1]}%</span><span>75%</span></div>
   </div>
   <div class="card gn"><div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
@@ -1166,7 +1214,7 @@ function bMarkup(x){
   </div>
     <div style="margin-top:13px;padding-top:11px;border-top:1px solid rgba(255,255,255,.12);display:flex;justify-content:space-between"><span class="sub" style="margin:0">Profit on this job</span><span class="serif" style="color:#ffffff;font-size:15px">${f$(rp-tjc)}</span></div>
   </div>
-  <div class="alert" style="background:var(--surface-2);border:none;color:var(--ink-2)"><span>ℹ</span><div>Overhead allocation uses ${b.cj} closed jobs this month. The more jobs you close, the lower your per-job overhead — so margins improve without raising your price.</div></div>`;
+  <div class="alert" style="background:var(--surface-2);border:none;color:var(--ink-2)"><span>ℹ</span><div>Your monthly bills are split across ${b.cj} closed jobs. Close more jobs and each one carries less of the bills — margins improve without raising your price.</div></div>`;
 }
 
 function bBE(x){
@@ -1189,7 +1237,7 @@ function bBE(x){
     <div class="row"><span style="font-size:12px;font-weight:500">Jobs to break even</span><span class="serif" style="font-size:17px;color:var(--green-l)">${beJ} / month</span></div>
   </div>
   <div class="card"><div style="font-size:12px;font-weight:500;margin-bottom:11px">Income goal</div>
-    <div style="margin-bottom:11px"><span class="lbl">Annual income target</span><div style="max-width:210px"><input class="inp serif" type="number" value="${b.annGoal}" oninput="bupd('annGoal',this.value)"></div></div>
+    <div style="margin-bottom:11px"><span class="lbl">Annual income target</span><div style="max-width:210px"><input class="inp serif" inputmode="numeric" value="${bfmt$(b.annGoal)}" onchange="bupd('annGoal',this.value)"></div></div>
     <div class="card sur" style="margin:0"><div class="sub" style="margin:0 0 2px">To cover overhead + hit this goal</div><div class="serif" style="font-size:22px">${gJ} jobs/month</div><div class="sub">${f$(mGoal)}/mo · ${Math.max(0,gJ-beJ)} jobs above break-even</div></div>
   </div>
   <div class="card"><div style="font-size:12px;font-weight:500;margin-bottom:16px">Monthly jobs tracker</div>
@@ -1209,8 +1257,8 @@ function bCF(x){
   return `
   <div class="card sur"><div style="font-size:12px;font-weight:500;margin-bottom:12px">Projection inputs</div>
     <div class="grid2" style="margin-bottom:11px">
-      <div><span class="lbl">Appointments / month</span><input class="inp serif" type="number" value="${b.cfAp}" oninput="bupd('cfAp',this.value)"></div>
-      <div><span class="lbl">Close rate %</span><input class="inp serif" type="number" value="${b.cfCr}" oninput="bupd('cfCr',this.value)"></div>
+      <div><span class="lbl">Appointments / month</span><input class="inp serif" type="number" value="${b.cfAp}" onchange="bupd('cfAp',this.value)"></div>
+      <div><span class="lbl">Close rate %</span><input class="inp serif" type="number" value="${b.cfCr}" onchange="bupd('cfCr',this.value)"></div>
     </div>
     <div style="padding:7px 10px;background:var(--line);border-radius:6px;font-size:10px;color:var(--ink-2)">Seasonal pattern for ${esc(tradeKey(S.clients.find(y=>y.id===S.activeClientId).trade))} · avg job ${f$(T.avgJ)} · overhead ${f$(tOH)}/mo</div>
   </div>
