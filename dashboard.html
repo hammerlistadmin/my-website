@@ -362,77 +362,92 @@ function enterDemo(){
   el('av').textContent='D'; el('menu-email').textContent='Demo mode';
   S.period=makePeriod('this_month');
   S.clients = demoClients();
-  S.clients.forEach(c=>c._base={appts:c.appts,spend:c.spend});
   S.activeClientId=null; S.tab='overview';
   renderShell(); routeAdminOrClient();
 }
 function recomputeDemoForPeriod(){
-  const N=S.period.months;
+  const N=S.period.months, key=S.period.key;
   S.clients.forEach(c=>{
-    const b=c._base||{appts:c.appts,spend:c.spend};
-    const cpa=b.appts>0? b.spend/b.appts : 0;   // locked per client
-    let appts;
-    if(N<=1){
-      appts=b.appts;                            // this/last month = exact reconciled base
+    let idSeed=0; for(const ch of c.id) idSeed+=ch.charCodeAt(0);
+    let appts,spend;
+    if(key==='this_month'){
+      // 10 days in: month-to-date pace of the monthly volume; spend = daily rate x days elapsed
+      appts=Math.round(c.monthly*DAY/DPM);
+      spend=c.rate*DAY;
+      const pm=0.9+laRng(idSeed*53)()*0.15;      // prior month-to-date for delta
+      c.prev={appts:Math.round(appts*pm),spend:Math.round(c.rate*DAY*(0.96+laRng(idSeed*59)()*0.06))};
+    } else if(N<=1){
+      // last month: full month of volume and ~30 days of ad budget
+      const r=laRng(idSeed*61);
+      appts=Math.round(c.monthly*(0.92+r()*0.16));
+      spend=Math.round(c.rate*30*(0.97+r()*0.05)); // budgets are fixed daily; small delivery variance only
+      c.prev={appts:Math.round(appts*(0.85+r()*0.1)),spend:Math.round(spend*(0.95+r()*0.04))};
     } else {
-      // real multi-month data is not a clean x N multiple — vary it deterministically
-      let idSeed=0; for(const ch of c.id) idSeed+=ch.charCodeAt(0);
+      // multi-month: months of volume + months of daily budget, never a clean multiple
       const r=laRng(idSeed*131+N*7);
-      const flat=b.appts*N;
-      const baseRatio=b.appts/CONFIG.guarantee;  // >=1 means meeting the monthly guarantee
-      // a stable ~1-in-4 of the strong clients reads as newer/ramping in every multi-month view
-      const isNewer = baseRatio>=1.05 && laRng(idSeed*977)()<0.28;
-      const factor = isNewer ? (0.80+r()*0.07)   // newer: ~80-87% of a full history (stays >=80% of goal, never red)
-                             : (0.95+r()*0.12);   // established: natural +/- a few % around flat
-      appts=Math.round(flat*factor);
+      const isNewer = laRng(idSeed*977)()<0.25;   // stable ~1-in-4 reads as a newer partner
+      const f = isNewer ? (0.80+r()*0.07) : (0.95+r()*0.10);
+      appts=Math.round(c.monthly*N*f);
+      spend=Math.round(c.rate*30.4*N*f);          // same history factor so CPA stays sane
+      const gf=0.80+laRng(idSeed*29+N*5)()*0.12;
+      c.prev={appts:Math.round(appts*gf),spend:Math.round(spend*Math.min(0.97,gf+0.08))};
     }
-    c.appts=appts;
-    c.spend=Math.round(appts*cpa);               // CPA stays constant -> spend reconciles exactly
-    // per-client prior-period delta (deterministic) so growth isn't a flat +22% on every card
-    let s2=0; for(const ch of c.id) s2+=ch.charCodeAt(0);
-    const r2=laRng(s2*29+N*5); const gf=0.80+r2()*0.12;
-    c.prev={appts:Math.round(appts*gf),spend:Math.round(c.spend*Math.min(0.97,gf+0.05))};
-    c.weekly = N<=1 ? demoWeekly(c.appts,c.spend) : demoMonthly(c.appts);
+    c.appts=appts; c.spend=spend;
+    const ratio=2.6+laRng(idSeed*41)()*1.5;        // leads per booked appt: ~2.6-4.1x (booking rate 25-38%)
+    c.leads=Math.round(appts*ratio);               // Meta-side: most leads don't book
+    c.campaigns=demoCampaigns(c.trade,spend,appts,c.leads); // keep campaign table summing to current totals
+    c.weekly = N<=1 ? demoWeekly(appts,spend,key==='this_month') : demoMonthly(c);
   });
 }
-function demoMonthly(appts){
-  const P=S.period; const out=[]; let cur=new Date(P.start.getFullYear(),P.start.getMonth(),1); const n=P.months;
-  for(let i=0;i<n && cur<=P.end;i++){ out.push({w:MN[cur.getMonth()],a:Math.round(appts/n*(0.8+Math.random()*0.4))}); cur=new Date(cur.getFullYear(),cur.getMonth()+1,1); }
+function demoMonthly(c){
+  // per-month bars at full monthly volume, varied per client+month; current month shows month-to-date
+  const P=S.period; const out=[]; let idSeed=0; for(const ch of c.id) idSeed+=ch.charCodeAt(0);
+  let cur=new Date(P.start.getFullYear(),P.start.getMonth(),1);
+  for(let i=0;i<P.months && cur<=P.end;i++){
+    const isCurrent = cur.getMonth()===TODAY.getMonth() && cur.getFullYear()===TODAY.getFullYear();
+    const a = isCurrent ? Math.round(c.monthly*DAY/DPM)
+                        : Math.round(c.monthly*(0.85+laRng(idSeed*100+cur.getMonth())()*0.3));
+    out.push({w:MN[cur.getMonth()],a});
+    cur=new Date(cur.getFullYear(),cur.getMonth()+1,1);
+  }
   return out;
 }
 function demoClients(){
-  // fictional businesses, geographically isolated cities, no real client data
-  const mk=(id,name,trade,city,owner,appts,spend,avgJob)=>({
-    id,name,trade,city,owner,appts,spend,avgJob,
-    prev:{appts:Math.round(appts*.82),spend:Math.round(spend*.9)},
-    appointments:demoAppts(trade,appts),
-    weekly:demoWeekly(appts,spend),
-    campaigns:demoCampaigns(trade,spend,appts)
-  });
+  // rate = daily ad budget (~$50/day); monthly = full-month appointment volume (26-43)
+  const mk=(id,name,trade,city,owner,monthly,rate,avgJob)=>{
+    const appts=Math.round(monthly*DAY/DPM), spend=rate*DAY; // month-to-date at load
+    let idSeed=0; for(const ch of id) idSeed+=ch.charCodeAt(0);
+    const leads=Math.round(appts*(2.6+laRng(idSeed*41)()*1.5));
+    return {
+      id,name,trade,city,owner,avgJob,monthly,rate,appts,spend,leads,
+      prev:{appts:Math.round(appts*.9),spend:Math.round(spend*.97)},
+      appointments:demoAppts(trade,appts),
+      weekly:demoWeekly(appts,spend,true),
+      campaigns:demoCampaigns(trade,spend,appts,leads)
+    };
+  };
   // Matches the public territory map: 20 cities, city + trade, no business names.
-  // CPA set realistically ($7-22, HVAC <=$15); spend = appts x CPA so every number reconciles.
-  // mk's spend arg below is written as appts*CPA for transparency.
   return [
-    mk('d1','Denver, CO','Concrete','',' ',16,16*18,12000),
-    mk('d2','Las Vegas, NV','Turfing','',' ',21,21*9,11000),
-    mk('d3','Salt Lake City, UT','Concrete','',' ',15,15*20,12000),
-    mk('d4','Missoula, MT','Decking','',' ',14,14*21,17000),
-    mk('d5','Jacksonville, FL','Concrete','',' ',18,18*16,12000),
-    mk('d6','Shreveport, LA','HVAC','',' ',17,17*13,9000),
-    mk('d7','Fargo, ND','Roofing','',' ',16,16*19,13500),
-    mk('d8','Lubbock, TX','Remodeling','',' ',15,15*20,14000),
-    mk('d9','Charleston, WV','Decking','',' ',13,13*22,17000),
-    mk('d10','Billings, MT','Concrete','',' ',19,19*15,12000),
-    mk('d11','Topeka, KS','Roofing','',' ',17,17*18,13500),
-    mk('d12','Rapid City, SD','Decking','',' ',14,14*20,17000),
-    mk('d13','Roanoke, VA','HVAC','',' ',18,18*12,9000),
-    mk('d14','Baton Rouge, LA','Concrete','',' ',16,16*17,12000),
-    mk('d15','Spokane, WA','Roofing','',' ',19,19*16,13500),
-    mk('d16','Wichita, KS','Turfing','',' ',20,20*10,11000),
-    mk('d17','Erie, PA','Concrete','',' ',15,15*19,12000),
-    mk('d18','Tucson, AZ','Turfing','',' ',22,22*8,11000),
-    mk('d19','Little Rock, AR','Remodeling','',' ',16,16*21,14000),
-    mk('d20','Sioux Falls, SD','HVAC','',' ',18,18*14,9000)
+    mk('d1','Denver, CO','Concrete','',' ',44,50,12000),
+    mk('d2','Las Vegas, NV','Turfing','',' ',58,55,11000),
+    mk('d3','Salt Lake City, UT','Concrete','',' ',40,50,12000),
+    mk('d4','Missoula, MT','Decking','',' ',34,48,17000),
+    mk('d5','Jacksonville, FL','Concrete','',' ',50,55,12000),
+    mk('d6','Shreveport, LA','HVAC','',' ',47,52,9000),
+    mk('d7','Fargo, ND','Roofing','',' ',42,58,13500),
+    mk('d8','Lubbock, TX','Remodeling','',' ',38,50,14000),
+    mk('d9','Charleston, WV','Decking','',' ',32,48,17000),
+    mk('d10','Billings, MT','Concrete','',' ',52,52,12000),
+    mk('d11','Topeka, KS','Roofing','',' ',45,55,13500),
+    mk('d12','Rapid City, SD','Decking','',' ',36,48,17000),
+    mk('d13','Roanoke, VA','HVAC','',' ',48,50,9000),
+    mk('d14','Baton Rouge, LA','Concrete','',' ',42,52,12000),
+    mk('d15','Spokane, WA','Roofing','',' ',51,60,13500),
+    mk('d16','Wichita, KS','Turfing','',' ',55,52,11000),
+    mk('d17','Erie, PA','Concrete','',' ',39,50,12000),
+    mk('d18','Tucson, AZ','Turfing','',' ',60,55,11000),
+    mk('d19','Little Rock, AR','Remodeling','',' ',41,55,14000),
+    mk('d20','Sioux Falls, SD','HVAC','',' ',49,52,9000)
   ];
 }
 function demoAppts(trade,n){
@@ -463,11 +478,11 @@ function demoAppts(trade,n){
   }
   return out;
 }
-function demoWeekly(appts,spend){
-  const w=[.22,.3,.28,.2];
+function demoWeekly(appts,spend,partial){
+  const w = partial ? [.55,.45] : [.22,.3,.28,.2]; // 10 days in = ~2 weeks elapsed
   return w.map((p,i)=>({w:'Wk '+(i+1),a:Math.round(appts*p),s:Math.round(spend*p)}));
 }
-function demoCampaigns(trade,spend,appts){
+function demoCampaigns(trade,spend,appts,leads){
   const names={
     Concrete:['Driveway leads','Stamped concrete','Patios & flatwork'],
     HVAC:['AC replacement','HVAC service','Mini split'],
@@ -476,8 +491,8 @@ function demoCampaigns(trade,spend,appts){
     Remodeling:['Kitchen & bath','Whole-home reno','Basement finish'],
     Roofing:['Roof replacement','Storm damage','Roof repair']
   }[trade]||['Search campaign','Retargeting','Lookalike'];
-  const sp=[.5,.32,.18], ap=[.55,.3,.15];
-  return names.map((n,i)=>({n,s:Math.round(spend*sp[i]),a:Math.max(1,Math.round(appts*ap[i]))}));
+  const sp=[.5,.32,.18], ap=[.55,.3,.15], lp=[.52,.31,.17];
+  return names.map((n,i)=>({n,s:Math.round(spend*sp[i]),a:Math.max(1,Math.round(appts*ap[i])),l:Math.max(1,Math.round((leads||appts*3)*lp[i]))}));
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -769,7 +784,7 @@ function renderPortfolio(){
   const cs=S.clients;
   if(!cs.length){ el('view').innerHTML='<div class="empty"><div class="ico">📭</div><div>No clients yet.</div></div>'; return; }
   cs.forEach(c=>{ c._pjobs=projJobs(c.appts); c._prev_pjobs=projJobs(c.prev.appts); c._prev=projRev(c.prev.appts,c.avgJob); c._proj=projRev(c.appts,c.avgJob); });
-  const tot=cs.reduce((a,c)=>({appts:a.appts+c.appts,spend:a.spend+c.spend,proj:a.proj+c._proj,pjobs:a.pjobs+c._pjobs}),{appts:0,spend:0,proj:0,pjobs:0});
+  const tot=cs.reduce((a,c)=>({appts:a.appts+c.appts,spend:a.spend+c.spend,proj:a.proj+c._proj,pjobs:a.pjobs+c._pjobs,leads:a.leads+(c.leads||0)}),{appts:0,spend:0,proj:0,pjobs:0,leads:0});
   const prev=cs.reduce((a,c)=>({appts:a.appts+c.prev.appts,spend:a.spend+c.prev.spend,proj:a.proj+c._prev}),{appts:0,spend:0,proj:0});
   const roas=tot.spend>0?(tot.proj/tot.spend).toFixed(1):'0';
 
@@ -780,7 +795,7 @@ function renderPortfolio(){
   <div class="grid4" style="margin-bottom:15px">
     <div class="card"><span class="lbl">Appointments</span><div class="num">${fN(tot.appts)}</div><div class="mc-m">${deltaHtml(tot.appts,prev.appts)}<span class="sub" style="margin:0">vs prev period</span></div></div>
     <div class="card"><span class="lbl">Ad spend</span><div class="num">${f$(tot.spend)}</div><div class="mc-m">${deltaHtml(tot.spend,prev.spend,true)}<span class="sub" style="margin:0">meta ads</span></div></div>
-    ${S.demo?`<div class="card gn"><span class="lbl">Avg cost / appt</span><div class="num">${tot.appts>0?'$'+Math.round(tot.spend/tot.appts):'—'}</div><div class="mc-m"><span class="sub" style="margin:0">across all partners</span></div></div>`:`<div class="card gn"><span class="lbl">Projected revenue</span><div class="num">${f$(tot.proj)}</div><div class="mc-m"><span class="sub" style="margin:0">at 50% close rate</span></div></div>`}
+    ${S.demo?`<div class="card gn"><span class="lbl">Avg cost / lead</span><div class="num">${tot.leads>0?'$'+Math.round(tot.spend/tot.leads):'—'}</div><div class="mc-m"><span class="sub" style="margin:0">${fN(tot.leads)} leads · meta ads</span></div></div>`:`<div class="card gn"><span class="lbl">Projected revenue</span><div class="num">${f$(tot.proj)}</div><div class="mc-m"><span class="sub" style="margin:0">at 50% close rate</span></div></div>`}
     <div class="card"><span class="lbl">Projected jobs</span><div class="num">${fN(tot.pjobs)}</div><div class="sub">50% of appointments</div></div>
   </div>
   ${S.demo?'':`<div class="card gs" style="margin-bottom:18px;display:flex;align-items:center;gap:24px;flex-wrap:wrap">
@@ -810,8 +825,10 @@ function renderPortfolio(){
       </div>
       <div class="cc-mini">
         <div><div class="cc-mini-l">Spend</div><div class="cc-mini-v">${f$(c.spend)}</div></div>
-        <div><div class="cc-mini-l">CPA</div><div class="cc-mini-v">$${cpa}</div></div>
-        ${S.demo?'':`<div><div class="cc-mini-l">Proj. rev</div><div class="cc-mini-v">${f$(c._proj)}</div></div>
+        ${S.demo?`<div><div class="cc-mini-l">Leads</div><div class="cc-mini-v">${fN(c.leads||0)}</div></div>
+        <div><div class="cc-mini-l">Cost / lead</div><div class="cc-mini-v">$${c.leads>0?Math.round(c.spend/c.leads):'—'}</div></div>
+        <div><div class="cc-mini-l">Booking rate</div><div class="cc-mini-v">${c.leads>0?Math.round(c.appts/c.leads*100)+'%':'—'}</div></div>`:`<div><div class="cc-mini-l">CPA</div><div class="cc-mini-v">$${cpa}</div></div>
+        <div><div class="cc-mini-l">Proj. rev</div><div class="cc-mini-v">${f$(c._proj)}</div></div>
         <div><div class="cc-mini-l">Proj. ROAS</div><div class="cc-mini-v">${roasC}×</div></div>`}
         <div><div class="cc-mini-l">Proj. jobs</div><div class="cc-mini-v">${c._pjobs}</div></div>
         <div><div class="cc-mini-l">Job value</div><div class="cc-mini-v">${f$(c.avgJob)}</div></div>
@@ -842,10 +859,17 @@ function renderClientView(){
   const r=62,circ=2*Math.PI*r,off=(circ*(1-Math.min(c.appts/p.target,1))).toFixed(1);
   const isLive = S.period.key==='this_month';
 
+  const cpl=S.demo&&c.leads>0?Math.round(c.spend/c.leads):0;
   const metrics=[
     {l:'Appointments',v:fN(c.appts),d:deltaHtml(c.appts,c.prev.appts),s:'booked this period'},
     {l:'Ad spend',v:f$(c.spend),d:deltaHtml(c.spend,c.prev.spend,true),s:'meta ads'},
-    {l:'Cost / appt',v:'$'+cpa,d:'',s:'per booking'},
+    ...(S.demo?[
+      {l:'Leads',v:fN(c.leads||0),d:'',s:'from meta ads'},
+      {l:'Cost / lead',v:'$'+cpl,d:'',s:'meta side'},
+      {l:'Booking rate',v:c.leads>0?Math.round(c.appts/c.leads*100)+'%':'—',d:'',s:'leads → booked appts',g:true}
+    ]:[
+      {l:'Cost / appt',v:'$'+cpa,d:'',s:'per booking'}
+    ]),
     {l:'Avg job value',v:f$(c.avgJob),d:'',s:c.trade.toLowerCase()},
     {l:'Projected jobs',v:fN(pjobs),d:deltaHtml(pjobs,prevPjobs),s:'at 50% close',g:true},
     ...(S.demo?[]:[
@@ -864,8 +888,15 @@ function renderClientView(){
       <span class="as as-${a.status}">${stL[a.status]||''}</span>
     </div>`).join(''):'<div class="muted" style="padding:14px 0;font-size:12px">No appointments yet this month.</div>';
 
-  const camps=c.campaigns&&c.campaigns.length?[...c.campaigns].sort((a,b)=>(a.s/a.a)-(b.s/b.a)):[];
-  const campRows=camps.length?camps.map((x,i)=>`
+  const camps=c.campaigns&&c.campaigns.length?[...c.campaigns].sort((a,b)=>S.demo&&a.l&&b.l?(a.s/a.l)-(b.s/b.l):(a.s/a.a)-(b.s/b.a)):[];
+  const campRows=camps.length?camps.map((x,i)=>S.demo?`
+    <div style="display:grid;grid-template-columns:1fr 50px 42px 40px 50px;gap:8px;align-items:start;padding:8px 0;border-top:1px solid var(--line)">
+      <div><div style="font-size:12px;font-weight:500">${esc(x.n)}</div>${i===0?'<div style="font-size:9px;color:var(--ok);font-weight:500">◆ most efficient</div>':''}</div>
+      <span style="font-size:11px;text-align:right;color:var(--ink-2)">${f$(x.s)}</span>
+      <span style="font-size:11px;text-align:right;color:var(--ink-2)">${x.l||''}</span>
+      <span style="font-size:11px;text-align:right;color:var(--ink-2)">${x.a}</span>
+      <span style="font-size:11px;text-align:right;font-weight:500;color:${i===0?'var(--ok)':'var(--ink)'}">$${x.l>0?Math.round(x.s/x.l):'—'}</span>
+    </div>`:`
     <div style="display:grid;grid-template-columns:1fr 56px 40px 52px;gap:8px;align-items:start;padding:8px 0;border-top:1px solid var(--line)">
       <div><div style="font-size:12px;font-weight:500">${esc(x.n)}</div>${i===0?'<div style="font-size:9px;color:var(--ok);font-weight:500">◆ most efficient</div>':''}</div>
       <span style="font-size:11px;text-align:right;color:var(--ink-2)">${f$(x.s)}</span>
@@ -908,7 +939,7 @@ function renderClientView(){
         <div class="card sur" style="margin:0;padding:11px 13px"><span class="lbl">Avg / month</span><div class="serif" style="font-size:18px">${(c.appts/S.period.months).toFixed(1)}</div><div class="sub">over ${S.period.months} months</div></div>
         <div class="card sur" style="margin:0;padding:11px 13px"><span class="lbl">Vs target</span><div class="serif" style="font-size:18px;color:${p.col}">${c.appts>=p.target?'+':''}${c.appts-p.target}</div><div class="sub">${c.appts>=p.target?'above':'below'} guarantee</div></div>
         `}
-        ${S.demo?`<div class="card sur" style="margin:0;padding:11px 13px"><span class="lbl">Cost / appt</span><div class="serif" style="font-size:18px;color:var(--ok)">$${cpa}</div><div class="sub">${fN(c.appts)} booked · ${f$(c.spend)} spend</div></div>`:`<div class="card sur" style="margin:0;padding:11px 13px"><span class="lbl">Projected revenue</span><div class="serif" style="font-size:18px;color:var(--ok)">${f$(proj)}</div><div class="sub">${pjobs} jobs × ${f$(c.avgJob)}</div></div>`}
+        ${S.demo?`<div class="card sur" style="margin:0;padding:11px 13px"><span class="lbl">Cost / lead</span><div class="serif" style="font-size:18px;color:var(--ok)">$${cpl}</div><div class="sub">${fN(c.leads||0)} leads → ${fN(c.appts)} booked</div></div>`:`<div class="card sur" style="margin:0;padding:11px 13px"><span class="lbl">Projected revenue</span><div class="serif" style="font-size:18px;color:var(--ok)">${f$(proj)}</div><div class="sub">${pjobs} jobs × ${f$(c.avgJob)}</div></div>`}
       </div>
     </div>
   </div>
@@ -925,8 +956,8 @@ function renderClientView(){
     </div>
   </div>
 
-  <div class="card"><div class="sec-t" style="font-size:13px">Campaign breakdown</div><div class="sec-s">Sorted by efficiency — lowest cost per appointment first</div>
-    <div style="display:grid;grid-template-columns:1fr 56px 40px 52px;gap:8px;padding-bottom:6px;border-bottom:1px solid var(--line)"><span class="th">Campaign</span><span class="th" style="text-align:right">Spend</span><span class="th" style="text-align:right">Appts</span><span class="th" style="text-align:right">CPA</span></div>
+  <div class="card"><div class="sec-t" style="font-size:13px">Campaign breakdown</div><div class="sec-s">Sorted by efficiency — lowest cost per ${S.demo?'lead':'appointment'} first</div>
+    ${S.demo?`<div style="display:grid;grid-template-columns:1fr 50px 42px 40px 50px;gap:8px;padding-bottom:6px;border-bottom:1px solid var(--line)"><span class="th">Campaign</span><span class="th" style="text-align:right">Spend</span><span class="th" style="text-align:right">Leads</span><span class="th" style="text-align:right">Appts</span><span class="th" style="text-align:right">CPL</span></div>`:`<div style="display:grid;grid-template-columns:1fr 56px 40px 52px;gap:8px;padding-bottom:6px;border-bottom:1px solid var(--line)"><span class="th">Campaign</span><span class="th" style="text-align:right">Spend</span><span class="th" style="text-align:right">Appts</span><span class="th" style="text-align:right">CPA</span></div>`}
     ${campRows}
   </div>
   ${nsAlert}`;
